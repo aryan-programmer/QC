@@ -72,23 +72,31 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>C:\cpp_libs\WinNTL\include;$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(BOOST_DIR)\lib64-msvc-14.1;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\cpp_libs\WinNTL\src;$(VC_SourcePath);</SourcePath>
+    <ReferencePath>C:\cpp_libs\WinNTL\src;$(VC_ReferencesPath_x86);</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>C:\cpp_libs\WinNTL\include;$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(BOOST_DIR)\lib64-msvc-14.1;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\cpp_libs\WinNTL\src;$(VC_SourcePath);</SourcePath>
+    <ReferencePath>C:\cpp_libs\WinNTL\src;$(VC_ReferencesPath_x64);</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>C:\cpp_libs\WinNTL\include;$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(BOOST_DIR)\lib64-msvc-14.1;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\cpp_libs\WinNTL\src;$(VC_SourcePath);</SourcePath>
+    <ReferencePath>C:\cpp_libs\WinNTL\src;$(VC_ReferencesPath_x86);</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>C:\cpp_libs\WinNTL\include;$(BOOST_DIR);$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(BOOST_DIR)\lib64-msvc-14.1;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\cpp_libs\WinNTL\src;$(VC_SourcePath);</SourcePath>
+    <ReferencePath>C:\cpp_libs\WinNTL\src;$(VC_ReferencesPath_x64);</ReferencePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -173,6 +181,7 @@
   <ItemGroup>
     <ClInclude Include="cross_utils.h" />
     <ClInclude Include="qc_grammar.h" />
+    <ClInclude Include="qc_parser_runner.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="utils.h" />
@@ -181,6 +190,7 @@
     <ClCompile Include="cross_utils.cpp" />
     <ClCompile Include="qc.cpp" />
     <ClCompile Include="qc_grammar.cpp" />
+    <ClCompile Include="qc_parser_runner.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

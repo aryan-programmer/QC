@@ -1,23 +1,6 @@
 #include "stdafx.h"
 #include "qc_grammar.h"
 
-static const std::unordered_map<std::string , std::string> languageExtensionDict
-{
-	{"", ".parsedqc"},
-	{"C#",".cs" }
-};
-static const std::unordered_map<char , char> openCloseBrace
-{
-	{ '<','>' },
-	{ '(',')' },
-	{ '[',']' },
-	{ '{','}' },
-	{ '>','<' },
-	{ ')','(' },
-	{ ']','[' },
-	{ '}','{' },
-};
-
 inline qc_parser::qc_parser( int indent ) : indent( indent ) { }
 
 struct qc_parser::qc_node_printer : boost::static_visitor<>
@@ -28,26 +11,18 @@ struct qc_parser::qc_node_printer : boost::static_visitor<>
 		const std::string& toLang ,
 		const std::string& tagVal ,
 		bool& isTagParsed ) :
-		indent( indent ) , o{ o } , toLang{ toLang } , tagVal{ tagVal } ,
-		isTagParsed{ isTagParsed }
+		indent( indent ) , o { o } , toLang { toLang } , tagVal { tagVal } ,
+		isTagParsed { isTagParsed }
 	{ }
 
-	void operator()( qc_data const& qc ) const
+	void operator()( qc_data& qc ) const
 	{
-		qc_parser( indent+tabsize )( qc , o , toLang );
+		qc_parser( indent + tabsize )( qc , o , toLang );
 	}
 
-	void operator()( std::string const& text ) const
+	void operator()( std::string& text ) const
 	{
-		if(toLang=="")
-		{
-			tab( indent , o );
-			o<<"text: \""<<text<<'"'<<std::endl;
-		}
-		else
-		{
-			parseLang( o , indent , tabsize , isTagParsed , text , tagVal , toLang );
-		}
+		parseLang( o , indent - tabsize , tabsize , isTagParsed , text , tagVal , toLang );
 	}
 
 	int indent;
@@ -57,35 +32,26 @@ struct qc_parser::qc_node_printer : boost::static_visitor<>
 	bool& isTagParsed;
 };
 
-void qc_parser::operator()( qc_data const& qc , std::ostream& o , const std::string& toLang ) const
+void qc_parser::operator()( qc_data& qc , std::ostream& o , const std::string& toLang ) const
 {
-	auto qce = qc_data_extra{ std::move( qc ),false };
+	auto qce = qc_data_extra { std::move( qc ),false };
 	( *this )( qce , o , toLang );
 }
 
 void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::string& toLang ) const
 {
-	if(toLang=="")
-	{
-		tab( indent , o );
-		o<<"tag: "<<qc.qc.name<<std::endl;
-		tab( indent , o );
-		o<<'{'<<std::endl;
-	}
 	const std::string& tagVal = qc.qc.name;
 
-	for(const auto& node:qc.qc.children)
+	for ( auto& node : qc.qc.children )
 		boost::apply_visitor( qc_node_printer( indent , o , toLang , tagVal , qc.tagParsed ) , node );
 
-	if(toLang=="")
-		tab( indent , o );
-	if(tagVal=="func")
-		tab( indent-tabsize , o );
-	if(tagVal!="native"&&tagVal!="$")
-		o<<'}'<<std::endl;
+	if ( tagVal == "func" )
+		tab( indent - tabsize * 2 , o );
+	if ( tagVal != "native"&&tagVal != "$"&&tagVal != "|qc|" )
+		o << '}' << std::endl;
 }
 
-qc_grammar::qc_grammar() :qc_grammar::base_type( qc , "qc" )
+qc_grammar::qc_grammar( ) :qc_grammar::base_type( qc , "qc" )
 {
 	using qi::lit;
 	using qi::lexeme;
@@ -98,27 +64,27 @@ qc_grammar::qc_grammar() :qc_grammar::base_type( qc , "qc" )
 	using phoenix::construct;
 	using phoenix::val;
 
-	text %= lexeme[ +( char_-'<' ) ];
-	node %= qc|text;
+	text %= lexeme[ +( char_ - '<' ) ];
+	node %= qc | text;
 
 	start_tag %=
 		'<'
-		>>!lit( '/' )
-			>lexeme[ +( char_-'>' ) ]
-			>'>'
+		>> !lit( '/' )
+			> lexeme[ +( char_ - '>' ) ]
+			> '>'
 		;
 
 	end_tag =
-		( "</>" )|
+		( "</>" ) |
 		( "</"
-			>string( _r1 )
-			>'>' )
+			> string( _r1 )
+			> '>' )
 		;
 
 	qc %=
 		start_tag[ _a = _1 ]
-			>*node
-			>end_tag( _a )
+			> *node
+			> end_tag( _a )
 		;
 
 	qc.name( "xml" );
@@ -131,11 +97,11 @@ qc_grammar::qc_grammar() :qc_grammar::base_type( qc , "qc" )
 		(
 			qc
 			, std::cout
-			<<val( "Error! Expecting " )
-			<<_4                               // what failed?
-			<<val( " here: \"" )
-			<<construct<std::string>( _3 , _2 )   // iterators to error-pos, end
-			<<val( "\"" )
-			<<std::endl
+			<< val( "Error! Expecting " )
+			<< _4                               // what failed?
+			<< val( " here: \"" )
+			<< construct<std::string>( _3 , _2 )   // iterators to error-pos, end
+			<< val( "\"" )
+			<< std::endl
 			);
 }

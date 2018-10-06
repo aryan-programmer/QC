@@ -39,9 +39,9 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 struct qc_parser
 {
-	qc_parser() :indent( 0 ) { }
+	qc_parser( ) :indent( 0 ) { }
 
-	void operator()( qc_data const& qc , std::ostream& o , const std::string& toLang ) const;
+	void operator()( qc_data& qc , std::ostream& o , const std::string& toLang ) const;
 
 private:
 	enum { tabsize = 4 };
@@ -59,13 +59,13 @@ private:
 //  QC grammar definition
 ///////////////////////////////////////////////////////////////////////////
 struct qc_grammar
-	: qi::grammar<std::string::const_iterator , qc_data() , qi::locals<std::string> , ascii::space_type>
+	: qi::grammar<std::string::const_iterator , qc_data( ) , qi::locals<std::string> , ascii::space_type>
 {
-	qc_grammar();
+	qc_grammar( );
 
-	qi::rule<std::string::const_iterator , qc_data() , qi::locals<std::string> , ascii::space_type> qc;
-	qi::rule<std::string::const_iterator , qc_data_node() , ascii::space_type> node;
-	qi::rule<std::string::const_iterator , std::string() , ascii::space_type> text;
-	qi::rule<std::string::const_iterator , std::string() , ascii::space_type> start_tag;
+	qi::rule<std::string::const_iterator , qc_data( ) , qi::locals<std::string> , ascii::space_type> qc;
+	qi::rule<std::string::const_iterator , qc_data_node( ) , ascii::space_type> node;
+	qi::rule<std::string::const_iterator , std::string( ) , ascii::space_type> text;
+	qi::rule<std::string::const_iterator , std::string( ) , ascii::space_type> start_tag;
 	qi::rule<std::string::const_iterator , void( std::string ) , ascii::space_type> end_tag;
 };
