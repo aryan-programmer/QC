@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\qc_parser_runner">
+      <UniqueIdentifier>{d693e536-3884-4c62-aa33-8a3746e1838b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\qc_parser_runner">
+      <UniqueIdentifier>{f2c9fa21-7c0e-4efc-91a2-acb3dc8b19d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
@@ -24,14 +30,20 @@
     <ClInclude Include="qc_grammar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="qc_parser_runner.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="qc_parser_runner.h">
+      <Filter>Header Files\qc_parser_runner</Filter>
+    </ClInclude>
+    <ClInclude Include="qc_pcr_macros.h">
+      <Filter>Header Files\qc_parser_runner</Filter>
+    </ClInclude>
+    <ClInclude Include="line_ast_funcs.h">
+      <Filter>Header Files\qc_parser_runner</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -51,7 +63,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="qc_parser_runner.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\qc_parser_runner</Filter>
+    </ClCompile>
+    <ClCompile Include="line_ast_funcs.cpp">
+      <Filter>Source Files\qc_parser_runner</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

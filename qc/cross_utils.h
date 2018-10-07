@@ -1,73 +1,50 @@
 #pragma once
 template<typename>
 using has__getcwd = decltype( &::_getcwd );
-
 char* crsgetcwd( char* buf , int size );
-
 std::string workingDir( );
 
-template<typename Str , typename Func>
-size_t find_first_of( const Str& text , size_t after , Func&& f )
+template<typename str_t , typename CkeckingFunc>
+size_t find_first_of( const str_t& text , size_t after , CkeckingFunc&& checkingFunc )
 {
-	if ( after >= text.size( ) )return Str::npos;
+	if ( after >= text.size( ) )return str_t::npos;
 	auto iter = text.begin( ) + after;
 	for ( size_t i = after; i < text.size( ); i++ , iter++ )
-	{
-		if ( f( i , iter ) )
-			return i;
-	}
-	return Str::npos;
+		if ( checkingFunc( i , iter ) ) return i;
+	return str_t::npos;
 }
 
-template<typename Str , typename Func>
-size_t find_first_not_of( const Str& text , size_t after , Func&& f )
+template<typename str_t , typename CkeckingFunc>
+size_t find_first_not_of( const str_t& text , size_t after , CkeckingFunc&& checkingFunc )
 {
-	if ( after >= text.size( ) )return Str::npos;
+	if ( after >= text.size( ) )return str_t::npos;
 	auto iter = text.begin( ) + after;
 	for ( size_t i = after; i < text.size( ); i++ , iter++ )
-	{
-		if ( !f( i , iter ) )
-			return i;
-	}
-	return Str::npos;
+		if ( !checkingFunc( i , iter ) ) return i;
+	return str_t::npos;
 }
 
-template<typename Str , typename FuncS , typename FuncF>
-void loop_split( const Str& text , FuncS&& sf , FuncF&& ff )
+template<typename str_t , typename CheckingFunc , typename AtSplitFunc>
+void loop_split( const str_t& text , CheckingFunc&& checkingFunc , AtSplitFunc&& atSplitFunc )
 {
-	std::size_t start = find_first_not_of( text , 0 , sf ) , end = 0;
+	std::size_t start = find_first_not_of( text , 0 , checkingFunc ) , end = 0;
 
-	while ( ( end = find_first_of( text , start , sf ) ) != Str::npos )
+	while ( ( end = find_first_of( text , start , checkingFunc ) ) != str_t::npos )
 	{
-		ff( Str( text.data( ) + start , end - start ) );
-		start = find_first_not_of( text , end , sf );
+		atSplitFunc( str_t( text.data( ) + start , end - start ) );
+		start = find_first_not_of( text , end , checkingFunc );
 	}
-	if ( start != Str::npos )
-		ff( Str( text.data( ) + start , end - start ) );
+	if ( start != str_t::npos )
+		atSplitFunc( str_t( text.data( ) + start , text.size( ) - start ) );
 }
 
-template<typename Str , typename OutputIterator , typename Func>
-void split( const Str& text , OutputIterator output , Func&& f )
-{
-	std::size_t start = find_first_not_of( text , 0 , f ) , end = 0;
+template<typename str_t , typename OutIter , typename CkeckingFunc>
+inline void split( const str_t& text , OutIter output , CkeckingFunc&& checkingFunc )
+{ loop_split( text , std::forward<CkeckingFunc>( checkingFunc ) , [ &output ] ( str_t&& val ) { *output = val; output++; } ); }
 
-	while ( ( end = find_first_of( text , start , f ) ) != Str::npos )
-	{
-		*output = text.substr( start , end - start );
-		output++;
-		start = find_first_not_of( text , end , f );
-	}
-	if ( start != Str::npos )
-		*output = text.substr( start );
-}
-
-template<typename Str , typename OutputIterator , typename Func , typename FuncD , typename FuncE>
-void split_with_enable_disable(
-	const Str& text ,
-	OutputIterator output ,
-	Func&& f ,
-	FuncD&& d ,
-	FuncE&& e )
+template<typename str_t , typename CkeckingFunc , typename DisableFunc , typename EnableFunc , typename AtSplitFunc>
+void loop_split_with_enable_disable(
+	const str_t& text , CkeckingFunc&& checkingFunc , DisableFunc&& disableFunc , EnableFunc&& enableFunc , AtSplitFunc&& asf )
 {
 	std::size_t start = 0 , end = 0;
 	bool hasToSwitchStart = true , hasToSwitchEnd = true;
@@ -78,14 +55,14 @@ void split_with_enable_disable(
 	{
 		if ( !enabled )
 		{
-			if ( e( i , iter ) )
-				//e(i,iter) is true so we start spliting
+			if ( enableFunc( i , iter ) )
+				//enableFunc(i,iter) is true so we start spliting
 				enabled = true;
 			continue;
 		}
 		// If we made it to here then spliting is enabled
 
-		auto isFSatisfied = f( i , iter );
+		auto isFSatisfied = checkingFunc( i , iter );
 		if ( hasToSwitchStart && ( !isFSatisfied ) )
 		{
 			// We have to get a new end & the end is i.
@@ -102,14 +79,23 @@ void split_with_enable_disable(
 		if ( !hasToSwitchEnd && !hasToSwitchStart )
 		{
 			hasToSwitchEnd = hasToSwitchStart = true;
-			*output = text.substr( start , end - start );
-			output++;
+			asf( str_t( text.data( ) + start , end - start ) );
 		}
 
-		if ( enabled && d( i , iter ) )
-			// d(i,iter) is true so we stop spliting
+		if ( enabled && disableFunc( i , iter ) )
+			// disableFunc(i,iter) is true so we stop spliting
 			enabled = false;
 	}
-	if ( start != Str::npos )
-		*output = text.substr( start );
+	if ( start != str_t::npos )
+		asf( str_t( text.data( ) + start , text.size( ) - start ) );
+}
+
+template<typename str_t , typename OutIter , typename CkeckingFunc , typename DisableFunc , typename EnableFunc>
+inline void split_with_enable_disable(
+	const str_t& text , OutIter output , CkeckingFunc&& checkingFunc , DisableFunc&& d , EnableFunc&& e )
+{
+	loop_split_with_enable_disable(
+		text ,
+		std::forward<CkeckingFunc>( checkingFunc ) , std::forward<DisableFunc>( d ) , std::forward<EnableFunc>( e ) ,
+		[ &output ] ( str_t&& val ) { *output = val; output++; } );
 }

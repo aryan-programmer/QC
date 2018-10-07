@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "cross_utils.h"
+#include <boost/type_traits/is_detected.hpp>
+
 
 char * crsgetcwd( char * buf , int size )
 {

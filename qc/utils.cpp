@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "utils.h"
 #include "cross_utils.h"
+#include "qc_grammar.h"
 #include "qc_parser_runner.h"
 
 static const std::unordered_map<std::string , std::string> languageExtensionDict
@@ -130,11 +131,11 @@ void replaceAngleBrace( std::string & val )
 	boost::algorithm::replace_all( val , "}}" , ">" );
 }
 
-void checkStr( std::string & val , const std::string & toLang )
+void checkStr( const std::string_view & val , const std::string & toLang )
 {
 	using namespace std::string_literals;
 	std::list<char> closeBraces;
-	size_t idx = -1;
+	size_t idx = 0;
 	for ( auto first = val.begin( ) , end = val.end( );
 		  first != end;
 		  first++ , idx++ )
@@ -162,7 +163,7 @@ void checkStr( std::string & val , const std::string & toLang )
 						"Expected \""s +
 						expectedCloseBrace +
 						"\"at \"\n" +
-						loc +
+						std::string( loc ) +
 						"\n\",\n got " +
 						chr ) , braceMismatch );
 				}
@@ -179,41 +180,53 @@ void checkStr( std::string & val , const std::string & toLang )
 			}
 		}
 	}
+	std::string errStr;
+	for ( auto& chr : closeBraces )
+	{
+		auto loc = val.substr(
+			val.find_last_of( '\n' , val.find_last_of( '\n' ) - 1 ) + 1 );
+		errStr +=
+			"Expected \""s +
+			chr +
+			"\"at \"\n" +
+			std::string( loc ) +
+			"\n\",\n got nothing.\n";
+	}
+	if ( errStr != "" ) throw throwVal( errStr , braceMismatch );
 }
 
 void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang )
 {
 	using namespace boost::algorithm;
 
-	std::vector<std::string> allSplit;
 	replace_all( text , "\\|]~" , ">" );
 	replace_all( text , "\\~[|" , "<" );
 
-	split( text , std::back_inserter( allSplit ) ,
-		( [ ] ( auto&& idx , auto&& iter )
-	{ return iter[ 0 ] == '`' && ( idx == 0 ? true : iter[ -1 ] != '\\' ); } ) );
-
-	for ( int i = 0; i < allSplit.size( ); i++ )
-	{
-		bool isEven = ( i % 2 ) == 0;
-		auto& val = allSplit[ i ];
-		replace_all( val , "\\`" , "`" );
-		if ( isEven )
+	size_t idx = 0;
+	loop_split(
+		text ,
+		[ ] ( auto&& idx , auto&& iter ) { return isStrQuote( idx , iter ); } ,
+		[ &idx , &toLang , &o ] ( std::string&& val )
 		{
-			replaceAngleBrace( val );
-			checkStr( val , toLang );
-			convStr( val , toLang );
-			o << val;
-		}
-		else
-		{
-			replace_all( val , R"(")" , R"("")" );
-			o << R"(@")" << val << R"(")";
-		}
-	}
+			bool isEven = ( idx % 2 ) == 0;
+			replace_all( val , "\\`" , "`" );
+			if ( isEven )
+			{
+				replaceAngleBrace( val );
+				checkStr( val , toLang );
+				convStr( val , toLang );
+				o << val;
+			}
+			else
+			{
+				replace_all( val , R"(")" , R"("")" );
+				o << R"(@")" << val << R"(")";
+			}
+			idx++;
+		} );
 }
 
-size_t getFirstNewline( const std::string & val , size_t off )
+size_t getFirstNewline( const std::string_view & val , size_t off )
 {
 	using namespace boost::algorithm;
 	auto pos = val.find_first_of( '\n' , off );
@@ -262,7 +275,15 @@ int parseArgs( std::vector<std::string>args )
 		return v;
 	}
 
-	if ( toLang == "" || toLang == "qc" ) pcr_file( arg );
+	if ( toLang == "" || toLang == "qc" )
+	{
+		try { pcr_file( arg ); }
+		catch ( throwVal& val )
+		{
+			getchar( );
+			return val.errCode;
+		}
+	}
 	else
 	{
 		cout << "Full parsing started" << endl;
@@ -408,7 +429,7 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang )
 	}
 }
 
-inline throwVal::throwVal( const std::string first , int errCode ) :errCode( errCode )
+inline throwVal::throwVal( const std::string& first , int errCode ) :errCode( errCode )
 {
 	indent++;
 	indentialTab( std::cout );

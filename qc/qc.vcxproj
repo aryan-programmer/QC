@@ -180,14 +180,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cross_utils.h" />
+    <ClInclude Include="line_ast_funcs.h" />
     <ClInclude Include="qc_grammar.h" />
     <ClInclude Include="qc_parser_runner.h" />
+    <ClInclude Include="qc_pcr_macros.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cross_utils.cpp" />
+    <ClCompile Include="line_ast_funcs.cpp" />
     <ClCompile Include="qc.cpp" />
     <ClCompile Include="qc_grammar.cpp" />
     <ClCompile Include="qc_parser_runner.cpp" />
