@@ -2,10 +2,11 @@
 #include "qc_parser_runner.h"
 #include "cross_utils.h"
 #include "line_ast_funcs.h"
+#include "qc_pcr_macros.h"
 #include <boost\multiprecision\cpp_int.hpp>
 #include <boost\scope_exit.hpp>
 
-std::unordered_map<std::string , std::shared_ptr<bint>> variables;
+std::unordered_map<std::string , shared_variable_t> variables;
 
 //std::list<std::tuple<std::string , boost::variant<std::string , std::tuple<std::string , std::string>>>> pastTags;
 
@@ -51,70 +52,129 @@ template<> void qc_pcrer<true>::operator()( if_check_then_cnst<true , std::strin
 	}
 }
 
-std::shared_ptr<bint> evaluate( bline_ast& ast );
-std::shared_ptr<bint> evaluate( std::string& str )
+shared_variable_t evaluate( bline_ast& ast );
+shared_variable_t evaluate( std::string& str )
 {
 	boost::algorithm::trim( str );
+	auto v = std::unique_ptr<variable_t>( new variable_t( ) );
+	try { *v = bint( str ); }
+	catch ( ... )
+	{
+		try { *v = bflt( str ); }
+		catch ( ... )
+		{
+			if ( str == "true" ) *v = true;
+			else if ( str == "false" )*v = false;
+			else goto var_expr;
+		}
+	}
+	return std::move( v );
+
+var_expr:
 	try
 	{
-		auto v = std::unique_ptr<bint>( new bint( ) );
-		*v = bint( str );
-		return std::move( v );
+		return variables.at( str );
 	}
 	catch ( ... )
 	{
-		try { return variables.at( str ); }
-		catch ( ... )
+		std::vector<std::string> splits;
+		split(
+			str ,
+			std::back_inserter( splits ) ,
+			[ ] ( auto&& , auto&& iter )
+			{ return ( boost::algorithm::is_space( )( *iter ) ); } );
+		if ( splits.size( ) != 2 )
+			throw throwVal( "Invalid expr: " + str , invalidExpr );
+		else
 		{
-			std::vector<std::string> splits;
-			split(
-				str ,
-				std::back_inserter( splits ) ,
-				[ ] ( auto&& , auto&& iter )
-				{ return ( boost::algorithm::is_space( )( *iter ) ); } );
-			if ( splits.size( ) != 2 )
-				throw throwVal( "Invalid expr: " + str , invalidExpr );
-			else
-			{
-				auto p = variables.emplace( splits[ 1 ] , std::shared_ptr<bint>( new bint( 0 ) ) );
-				if ( !p.second )
-					throw throwVal(
-						"Re-declaration of variable: " + str + "not allowed" ,
-						invalidExpr );
-				return p.first->second;
-			}
+			auto p = variables.emplace( splits[ 1 ] , std::move( v ) );
+			if ( !p.second )
+				throw throwVal(
+					"Re-declaration of variable: " + str + " not allowed" ,
+					invalidExpr );
+			return p.first->second;
 		}
 	}
 }
 
-struct evaluator_visitor :boost::static_visitor<std::shared_ptr<bint>>
+struct evaluator_visitor :boost::static_visitor<shared_variable_t>
 {
-	forceinline std::shared_ptr<bint> operator()( bline_ast& lineast ) const
-	{ return evaluate( lineast ); }
-	forceinline std::shared_ptr<bint> operator()( std::shared_ptr<bint>& int_ ) const
-	{ return int_; }
-	forceinline std::shared_ptr<bint> operator()( std::string& str ) const
-	{ return evaluate( str ); }
+	forceinline shared_variable_t operator()( bline_ast& lineast ) const
+	{
+		return evaluate( lineast );
+	}
+	forceinline shared_variable_t operator()( shared_variable_t& val ) const
+	{
+		return val;
+	}
+	forceinline shared_variable_t operator()( std::string& str ) const
+	{
+		return evaluate( str );
+	}
 } v;
 
+template<typename...> class TD;
 
-void eval_op( std::string &op , bint &res , bint &prev , bint &post ) { OP_IF_STATEMENTS; }
+void eval_op( std::string &op , shared_variable_t& res , shared_variable_t& prev , shared_variable_t& post )
+{
+	boost::apply_visitor(
+		[ &op , &res , &prev , &post ] ( auto& lhs , auto& rhs )
+		{
+			using lhs_t = std::remove_reference_t<decltype( lhs )>;
+			using rhs_t = std::remove_reference_t<decltype( rhs )>;
+			constexpr bool isLHSBint = std::is_same_v<lhs_t , bint>;
+			constexpr bool isRHSBint = std::is_same_v<rhs_t , bint>;
+			constexpr bool isLHSBflt = std::is_same_v<lhs_t , bflt>;
+			constexpr bool isRHSBflt = std::is_same_v<rhs_t , bflt>;
+			constexpr bool isLHSBool = std::is_same_v<lhs_t , bool>;
+			constexpr bool isRHSBool = std::is_same_v<rhs_t , bool>;
+			decltype( auto ) backup_rhs = rhs;
+			if ( op == "=" )
+			{
+				*prev = *post;
+				res = prev;
+			}
+			else if
+				constexpr( isLHSBool && isRHSBool ) { OP_IF_STATEMENTS_FOR_BOOL }
+			else if
+				constexpr( isLHSBflt && ( isRHSBint || isRHSBflt ) )
+			{
+				boost::conditional_t<isRHSBint , bflt , bflt&> rhs = static_cast< boost::conditional_t<isRHSBint , bflt , bflt&> >( backup_rhs );
+				OP_IF_STATEMENTS_FOR_BFLT
+			}
+			else if
+				constexpr( isLHSBint && ( isRHSBint || isRHSBflt ) )
+			{
+				boost::conditional_t<isRHSBflt , bint , bint&> rhs = static_cast< boost::conditional_t<isRHSBflt , bint , bint&> >( backup_rhs );
+				OP_IF_STATEMENTS_FOR_BINT
+			}
+			else
+			{
+				using namespace std::string_literals;
+				throw throwVal(
+					std::string( "Operation between types " ) +
+					( isLHSBint ? "bint" : ( isLHSBflt ? "bflt" : "bool" ) ) + " and " +
+					( isRHSBint ? "bint" : ( isRHSBflt ? "bflt" : "bool" ) ) +
+					" is not supported" , invalidTypes );
+			}
+		} , *prev , *post );
+}
 
 void op_eval( evaluator_visitor &v , bline_ast & ast , const size_t & pos )
 {
-	std::shared_ptr<bint>
+	shared_variable_t
 		prev = boost::apply_visitor( v , ast[ pos - 1 ] ) ,
 		post = boost::apply_visitor( v , ast[ pos + 1 ] ) ,
-		res = std::shared_ptr<bint>( new bint( 0 ) );
+		res;
 	auto op = boost::get<std::string>( ast[ pos ] );
-	if ( !( prev&&post&&res ) )goto end;
-	eval_op( op , *res , *prev , *post );
+	if ( !( prev&&post ) )goto end;
+	eval_op( op , res , prev , post );
 end:
 	ast[ pos - 1 ] = std::move( res );
 	ast.erase( ast.begin( ) + pos , ast.begin( ) + pos + 2 );
 }
 
-std::shared_ptr<bint> evaluate( bline_ast& ast )
+shared_variable_t evaluate( bline_ast& ast )
 {
 	if ( ast.size( ) > 3 )
 	{
@@ -145,7 +205,8 @@ std::shared_ptr<bint> evaluate( bline_ast& ast )
 	return boost::apply_visitor( v , ast[ 0 ] );
 }
 
-std::shared_ptr<bint> fullEval( std::string_view splitStr )
+
+shared_variable_t fullEval( std::string&& splitStr )
 {
 	using boost::spirit::ascii::space;
 	using qi::phrase_parse;
@@ -161,24 +222,28 @@ std::shared_ptr<bint> fullEval( std::string_view splitStr )
 			{ return *iter == '(' || isStrQuote( i , iter ); } ,
 			[ ] ( auto&& i , auto&& iter )
 			{ return *iter == ')' || isStrQuote( i , iter ); } ,
-			[ ] ( std::string_view&& val )
+			[ ] ( string&& val )
 			{
+				boost::trim( val );
 				if ( val == "endl" )
-					std::cout << std::endl;
+					cout << std::endl;
 				else if ( val[ 0 ] == '`' )
-					std::cout << val.substr( 1 , val.size( ) - 2 );
+					cout << val.substr( 1 , val.size( ) - 2 );
 				else
-					std::cout << *fullEval( val );
+					cout << *fullEval( string( val ) );
 			} );
-		return std::shared_ptr<bint>( new bint( 0 ) );
+		return shared_variable_t( new variable_t( ) );
 	}
+	commonReplacement( splitStr );
+	string_view splitStrView = splitStr;
 
-	qc_line_ast_generator<std::string_view::const_iterator> gen;
+	qc_line_ast_generator gen;
 	line_ast ast;
-	auto iter = splitStr.begin( );
-	auto end = splitStr.end( );
+	auto iter = splitStrView.begin( );
+	auto end = splitStrView.end( );
 	auto succeed = phrase_parse( iter , end , gen , space , ast );
 	bline_ast b_ast = line_ast_to_bline_ast( std::move( ast ) );
+	BOOST_ASSERT( end == iter );
 	return ::evaluate( b_ast );
 }
 

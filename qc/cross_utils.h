@@ -24,6 +24,26 @@ size_t find_first_not_of( const str_t& text , size_t after , CkeckingFunc&& chec
 	return str_t::npos;
 }
 
+template<typename str_t , typename CkeckingFunc>
+size_t find_last_of( const str_t& text , size_t after , CkeckingFunc&& checkingFunc )
+{
+	if ( after >= text.size( ) )return str_t::npos;
+	auto iter = text.begin( ) + after;
+	for ( size_t i = text.size() - 1; i >= 0; i-- )
+		if ( checkingFunc( i , iter ) ) return i;
+	return str_t::npos;
+}
+
+template<typename str_t , typename CkeckingFunc>
+size_t find_last_not_of( const str_t& text , size_t after , CkeckingFunc&& checkingFunc )
+{
+	if ( after >= text.size( ) )return str_t::npos;
+	auto iter = text.begin( ) + after;
+	for ( size_t i = text.size() - 1; i >= 0; i-- )
+		if ( !checkingFunc( i , iter ) ) return i;
+	return str_t::npos;
+}
+
 template<typename str_t , typename CheckingFunc , typename AtSplitFunc>
 void loop_split( const str_t& text , CheckingFunc&& checkingFunc , AtSplitFunc&& atSplitFunc )
 {

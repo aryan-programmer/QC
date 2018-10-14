@@ -45,6 +45,9 @@
     <ClInclude Include="line_ast_funcs.h">
       <Filter>Header Files\qc_parser_runner</Filter>
     </ClInclude>
+    <ClInclude Include="singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

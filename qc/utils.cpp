@@ -38,13 +38,25 @@ void parseLang(
 	auto isComment = tagVal == "$" , isRoot = tagVal == "|qc|";
 	auto idx = ( isTagParsed || isComment ) ? 0 : getFirstNewline( text );
 	if ( idx == std::string::npos )idx = text.length( );
-	if ( tagVal == "class" || tagVal == "struct" )
+	if ( tagVal == "class" || tagVal == "struct" || tagVal == "interface" || tagVal == "namespace" )
 	{
 		if ( !isTagParsed )
 		{
 			isTagParsed = true;
-			o << tagVal;
-			o << ' ' << text.substr( 0 , idx ) << "{";
+			o << tagVal << ' ' << text.substr( 0 , idx ) << "{";
+		}
+		else
+		{
+			o << text.substr( 0 , idx );
+			tab( indent + tabsize , o );
+		}
+	}
+	else if ( tagVal == "unsafe" || tagVal == "unchecked" )
+	{
+		if ( !isTagParsed )
+		{
+			isTagParsed = true;
+			o << tagVal << " {";
 		}
 		else
 		{
@@ -101,6 +113,22 @@ void parseLang(
 	}
 }
 
+void commonReplacement( std::string & val )
+{
+	using namespace boost::algorithm;
+
+	replace_all( val , "less or eq" , "<=" );
+	replace_all( val , "more or eq" , ">=" );
+	replace_all( val , "equals" , "==" );
+	replace_all( val , "not equals" , "!=" );
+	replace_all( val , "less" , "<" );
+	replace_all( val , "more" , ">" );
+	replace_all( val , "left shift" , "<<" );
+	replace_all( val , "right shift" , ">>" );
+	replace_all( val , "left shift set" , "<<=" );
+	replace_all( val , "right shift set" , ">>=" );
+}
+
 void convStr( std::string & val , const std::string & toLang )
 {
 	using namespace boost::algorithm;
@@ -109,19 +137,14 @@ void convStr( std::string & val , const std::string & toLang )
 	replace_all( val , "also give" , "yield return" );
 	replace_all( val , "finalize" , "yield break" );
 	replace_all( val , "give" , "return" );
-	replace_all( val , "gen of" , "System.Collections.Generic.IEnumerable" );
-	replace_all( val , "iter gen of" , "System.Collections.Generic.IEnumerator" );
+	replace_all( val , "gen_of" , "System.Collections.Generic.IEnumerable" );
+	replace_all( val , "iter gen_of" , "System.Collections.Generic.IEnumerator" );
 	replace_all( val , "gen" , "System.Collections.IEnumerable" );
 	replace_all( val , "iter gen" , "System.Collections.IEnumerator" );
-	replace_all( val , "less or eq" , "<=" );
-	replace_all( val , "more or eq" , ">=" );
-	replace_all( val , "equals" , "==" );
-	replace_all( val , "not equals" , "!=" );
-	replace_all( val , "less" , "<" );
-	replace_all( val , "more" , ">" );
-	replace_all( val , "\n" , ";\n" );
+	commonReplacement( val );
+	replace_all( val , "\b" , ";\b" );
 	replace_all( val , "_;" , "" );
-	replace_all( val , "\n;" , "\n" );
+	replace_all( val , "\b;" , "\b" );
 	if ( val[ 0 ] == ';' ) val = val.substr( 1 );
 }
 
@@ -162,9 +185,9 @@ void checkStr( const std::string_view & val , const std::string & toLang )
 					throw throwVal( (
 						"Expected \""s +
 						expectedCloseBrace +
-						"\"at \"\n" +
+						"\"at \"\b" +
 						std::string( loc ) +
-						"\n\",\n got " +
+						"\b\",\b got " +
 						chr ) , braceMismatch );
 				}
 				else
@@ -188,9 +211,9 @@ void checkStr( const std::string_view & val , const std::string & toLang )
 		errStr +=
 			"Expected \""s +
 			chr +
-			"\"at \"\n" +
+			"\"at \"\b" +
 			std::string( loc ) +
-			"\n\",\n got nothing.\n";
+			"\b\",\b got nothing.\b";
 	}
 	if ( errStr != "" ) throw throwVal( errStr , braceMismatch );
 }
@@ -239,7 +262,7 @@ size_t getFirstNewline( const std::string_view & val , size_t off )
 	}
 }
 
-int parseArgs( std::vector<std::string>args )
+int parseArgs( boost::program_options::variables_map vm )
 {
 	using namespace std;
 	using namespace std::string_literals;
@@ -247,31 +270,28 @@ int parseArgs( std::vector<std::string>args )
 	using boost::filesystem::path;
 	using boost::filesystem::directory_iterator;
 
-	path curr = workingDir( );
-
-	path arg;
-	if ( args.size( ) >= 1 )
+	if ( !vm.count( "file" ) )
 	{
-		arg = args[ 0 ];
-		if ( !arg.is_absolute( ) )
-		{
-			arg = curr;
-			arg /= args[ 0 ];
-		}
-	}
-	else
-	{
-		cerr << "Error: No input file or directory provided.";
+		cerr << "No input file given" << endl;
 		return noInpFileOrDir;
 	}
 
-	string toLang( "" );
-	if ( args.size( ) >= 2 ) toLang = args[ 1 ];
+	path curr = workingDir( );
+
+	path arg;
+	auto filePath = vm[ "file" ].as<std::string>( );
+	arg = filePath;
+	if ( !arg.is_absolute( ) )
+	{
+		arg = curr;
+		arg /= filePath;
+	}
+
+	string toLang( ( !vm.count( "file" ) ) ? "qc" : vm[ "language" ].as<std::string>( ) );
 
 	if ( supportedLanguages.find( toLang ) == supportedLanguages.end( ) )
 	{
 		auto v = throwVal( "Language \"" + toLang + "\" is not presently supported" , unsupportedLanguage ).errCode;
-		getchar( );
 		return v;
 	}
 
@@ -280,7 +300,6 @@ int parseArgs( std::vector<std::string>args )
 		try { pcr_file( arg ); }
 		catch ( throwVal& val )
 		{
-			getchar( );
 			return val.errCode;
 		}
 	}
@@ -306,11 +325,9 @@ int parseArgs( std::vector<std::string>args )
 			indent--;
 			cout << "Full parsing failed" << endl;
 
-			getchar( );
 			return val.errCode;
 		}
 	}
-	//getchar();
 	return 0;
 }
 

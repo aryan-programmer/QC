@@ -1,6 +1,8 @@
 <|qc|>
-var a = 20+50
-var b = 10+(1-9*(6+5)-(1204-12034+(1*10)*20+(10+20)))
-print `a == `,a,endl
-print `b == `,b,endl
-</|qc|>
+var a = 5.1
+a += 11.1
+a *= 4.1
+a *= (a * a)
+print `a                  == `, a, endl
+print `a less or eq 10000 == `, (a less or eq 10000), endl 
+</>
