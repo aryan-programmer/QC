@@ -23,7 +23,6 @@ bline_ast line_ast_to_bline_ast( line_ast && ast )
 
 std::ostream& operator<<( std::ostream& o , line_ast& ast )
 {
-	0;
 	struct :boost::static_visitor<>
 	{
 		forceinline void operator()( line_ast& lineast ) const

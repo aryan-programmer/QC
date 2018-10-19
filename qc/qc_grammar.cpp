@@ -1,6 +1,27 @@
 #include "stdafx.h"
 #include "qc_grammar.h"
 
+const std::unordered_map<std::string , std::string> shorthandsAndOfficialKeywords
+{
+	{"C", "class" },
+	{"S", "struct" },
+	{"I", "interface" },
+	{"P", "property" },
+	{"F", "function" },
+	{"W", "while" },
+	{"?", "class" },
+	{"!", "struct" },
+	{"^", "interface" },
+	{"=", "property" },
+	{"()", "function" },
+	{"[]", "indexer" },
+	{"in", "foreach" },
+	{"idxr", "indexer" },
+	{"elif", "else if" },
+	{"func", "function" },
+	{"prop", "property" },
+};
+
 inline qc_parser::qc_parser( int indent ) : indent( indent ) { }
 
 struct qc_parser::qc_node_printer : boost::static_visitor<>
@@ -40,12 +61,15 @@ void qc_parser::operator()( qc_data& qc , std::ostream& o , const std::string& t
 
 void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::string& toLang ) const
 {
+	auto& mutTagVat = qc.qc.name;
+	try { mutTagVat = shorthandsAndOfficialKeywords.at( mutTagVat ); }
+	catch ( ... ) { }
 	const std::string& tagVal = qc.qc.name;
 
 	for ( auto& node : qc.qc.children )
 		boost::apply_visitor( qc_node_printer( indent , o , toLang , tagVal , qc.tagParsed ) , node );
 
-	if ( tagVal == "func" )
+	if ( tagVal == "function" )
 		tab( indent - tabsize * 2 , o );
 	if ( tagVal != "native"&&tagVal != "$"&&tagVal != "|qc|" )
 		o << '}' << std::endl;
