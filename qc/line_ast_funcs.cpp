@@ -21,44 +21,6 @@ bline_ast line_ast_to_bline_ast( line_ast && ast )
 	return std::move( b_ast );
 }
 
-std::ostream& operator<<( std::ostream& o , line_ast& ast )
-{
-	struct :boost::static_visitor<>
-	{
-		forceinline void operator()( line_ast& lineast ) const
-		{ std::cout << std::endl << lineast; }
-		forceinline void operator()( std::string& str ) const { std::cout << str << ' '; }
-	} v;
-	for ( auto& i : ast )boost::apply_visitor( v , i );
-	return o;
-}
-
-std::ostream & operator<<( std::ostream & o , bline_ast & ast )
-{
-	bool f = true;
-	for ( auto& node : ast )
-	{
-		o << '[' << ast;
-		if ( f == true ) { f = false; o << ']'; continue; }
-		o << ",";
-	}
-	return o;
-}
-
-std::ostream & operator<<( std::ostream & o , bline_ast_node & ast )
-{
-	struct __________________ :boost::static_visitor<>
-	{
-		__________________( std::ostream & o ) :o { o } { }
-		forceinline void operator()( bline_ast& ast ) { o << ast; }
-		forceinline void operator()( std::string& val ) { o << val; }
-		forceinline void operator()( shared_variable_t& var ) { o << *var; }
-		std::ostream & o;
-	}v( o );
-	boost::apply_visitor( v , ast );
-	return o;
-}
-
 qc_line_ast_generator::qc_line_ast_generator( ) :qc_line_ast_generator::base_type( line , "line" )
 {
 	using qi::lit;
@@ -79,7 +41,7 @@ qc_line_ast_generator::qc_line_ast_generator( ) :qc_line_ast_generator::base_typ
 	line.name( "line" );
 
 	operator_ %= LINE_AST_OP_PARSER;
-	expr %= lit( '(' ) >> line >> ')' | lexeme[ +( alnum | space | char_( '.' ) ) ];
+	expr %= ( '(' >> line >> ')' ) | lexeme[ +( alnum | space | char_( '.' ) ) ];
 	line %= expr >> *( operator_ >> expr );
 
 	on_error<fail>

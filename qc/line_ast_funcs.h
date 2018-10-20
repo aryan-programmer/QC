@@ -11,9 +11,6 @@ using bline_ast_node = boost::make_recursive_variant<
 using bline_ast = std::vector<bline_ast_node>;
 
 bline_ast line_ast_to_bline_ast( line_ast&& ast );
-std::ostream& operator<<( std::ostream& o , line_ast& ast );
-std::ostream& operator<<( std::ostream& o , bline_ast& ast );
-std::ostream& operator<<( std::ostream& o , bline_ast_node& ast );
 
 class qc_line_ast_generator : public qi::grammar<std::string_view::const_iterator , line_ast( ) , ascii::space_type>
 {

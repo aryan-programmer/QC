@@ -6,7 +6,8 @@
 #include <boost\multiprecision\cpp_int.hpp>
 #include <boost\scope_exit.hpp>
 
-std::unordered_map<std::string , shared_variable_t> variables;
+using variable_map = std::unordered_map<std::string , shared_variable_t>;
+variable_map variables;
 
 //std::list<std::tuple<std::string , boost::variant<std::string , std::tuple<std::string , std::string>>>> pastTags;
 
@@ -52,8 +53,8 @@ template<> void qc_pcrer<true>::operator()( if_check_then_cnst<true , std::strin
 	}
 }
 
-shared_variable_t evaluate( bline_ast& ast );
-shared_variable_t evaluate( std::string& str )
+shared_variable_t evaluate( variable_map& vm , bline_ast& ast );
+shared_variable_t evaluate( variable_map& vm , std::string& str )
 {
 	boost::algorithm::trim( str );
 	auto v = std::unique_ptr<variable_t>( new variable_t( ) );
@@ -73,7 +74,7 @@ shared_variable_t evaluate( std::string& str )
 var_expr:
 	try
 	{
-		return variables.at( str );
+		return vm.at( str );
 	}
 	catch ( ... )
 	{
@@ -87,7 +88,7 @@ var_expr:
 			throw throwVal( "Invalid expr: " + str , invalidExpr );
 		else
 		{
-			auto p = variables.emplace( splits[ 1 ] , std::move( v ) );
+			auto p = vm.emplace( splits[ 1 ] , std::move( v ) );
 			if ( !p.second )
 				throw throwVal(
 					"Re-declaration of variable: " + str + " not allowed" ,
@@ -97,11 +98,13 @@ var_expr:
 	}
 }
 
-struct evaluator_visitor :boost::static_visitor<shared_variable_t>
+struct evaluator_visitor :boost::static_visitor<shared_variable_t> , boost::noncopyable
 {
+	variable_map& vm;
+	evaluator_visitor( variable_map& vm ) :vm { vm } { }
 	forceinline shared_variable_t operator()( bline_ast& lineast ) const
 	{
-		return evaluate( lineast );
+		return evaluate( vm , lineast );
 	}
 	forceinline shared_variable_t operator()( shared_variable_t& val ) const
 	{
@@ -109,9 +112,9 @@ struct evaluator_visitor :boost::static_visitor<shared_variable_t>
 	}
 	forceinline shared_variable_t operator()( std::string& str ) const
 	{
-		return evaluate( str );
+		return evaluate( vm , str );
 	}
-} v;
+};
 
 template<typename...> class TD;
 
@@ -135,15 +138,15 @@ void eval_op( std::string &op , shared_variable_t& res , shared_variable_t& prev
 				res = prev;
 			}
 			else if
-				constexpr( isLHSBool && isRHSBool ) { OP_IF_STATEMENTS_FOR_BOOL }
+				constexpr ( isLHSBool && isRHSBool ) { OP_IF_STATEMENTS_FOR_BOOL }
 			else if
-				constexpr( isLHSBflt && ( isRHSBint || isRHSBflt ) )
+				constexpr ( isLHSBflt && ( isRHSBint || isRHSBflt ) )
 			{
 				boost::conditional_t<isRHSBint , bflt , bflt&> rhs = static_cast< boost::conditional_t<isRHSBint , bflt , bflt&> >( backup_rhs );
 				OP_IF_STATEMENTS_FOR_BFLT
 			}
 			else if
-				constexpr( isLHSBint && ( isRHSBint || isRHSBflt ) )
+				constexpr ( isLHSBint && ( isRHSBint || isRHSBflt ) )
 			{
 				boost::conditional_t<isRHSBflt , bint , bint&> rhs = static_cast< boost::conditional_t<isRHSBflt , bint , bint&> >( backup_rhs );
 				OP_IF_STATEMENTS_FOR_BINT
@@ -160,11 +163,11 @@ void eval_op( std::string &op , shared_variable_t& res , shared_variable_t& prev
 		} , *prev , *post );
 }
 
-void op_eval( evaluator_visitor &v , bline_ast & ast , const size_t & pos )
+void op_eval( evaluator_visitor& ev , bline_ast & ast , const size_t & pos )
 {
 	shared_variable_t
-		prev = boost::apply_visitor( v , ast[ pos - 1 ] ) ,
-		post = boost::apply_visitor( v , ast[ pos + 1 ] ) ,
+		prev = boost::apply_visitor( ev , ast[ pos - 1 ] ) ,
+		post = boost::apply_visitor( ev , ast[ pos + 1 ] ) ,
 		res;
 	auto op = boost::get<std::string>( ast[ pos ] );
 	if ( !( prev&&post ) )goto end;
@@ -174,8 +177,9 @@ end:
 	ast.erase( ast.begin( ) + pos , ast.begin( ) + pos + 2 );
 }
 
-shared_variable_t evaluate( bline_ast& ast )
+shared_variable_t evaluate( variable_map& vm , bline_ast& ast )
 {
+	evaluator_visitor ev( vm );
 	if ( ast.size( ) > 3 )
 	{
 		std::vector<size_t> ordered_poss;
@@ -193,7 +197,7 @@ shared_variable_t evaluate( bline_ast& ast )
 		for ( size_t idx = 0; idx < ordered_poss.size( ); idx++ )
 		{
 			const auto& pos = ordered_poss[ idx ];
-			op_eval( v , ast , pos );
+			op_eval( ev , ast , pos );
 			for ( size_t i = idx; i < ordered_poss.size( ); i++ )
 				if ( ordered_poss[ i ] > pos )
 					ordered_poss[ i ] -= 2;
@@ -201,12 +205,12 @@ shared_variable_t evaluate( bline_ast& ast )
 	}
 	else if ( ast.size( ) == 1 );
 	// ast.size( ) == 3
-	else op_eval( v , ast , 1 );
-	return boost::apply_visitor( v , ast[ 0 ] );
+	else op_eval( ev , ast , 1 );
+	return boost::apply_visitor( ev , ast[ 0 ] );
 }
 
 
-shared_variable_t fullEval( std::string&& splitStr )
+shared_variable_t fullEval( variable_map& vm , std::string&& splitStr )
 {
 	using boost::spirit::ascii::space;
 	using qi::phrase_parse;
@@ -219,10 +223,10 @@ shared_variable_t fullEval( std::string&& splitStr )
 			notPrt ,
 			[ ] ( auto&& , auto&& iter ) { return *iter == ','; } ,
 			[ ] ( auto&& i , auto&& iter )
-			{ return *iter == '(' || isStrQuote( i , iter ); } ,
+			{ return ::isStrQuote( i , iter ); } ,
 			[ ] ( auto&& i , auto&& iter )
-			{ return *iter == ')' || isStrQuote( i , iter ); } ,
-			[ ] ( string&& val )
+			{ return ::isStrQuote( i , iter ); } ,
+			[ &vm ] ( string&& val )
 			{
 				boost::trim( val );
 				if ( val == "endl" )
@@ -230,7 +234,7 @@ shared_variable_t fullEval( std::string&& splitStr )
 				else if ( val[ 0 ] == '`' )
 					cout << val.substr( 1 , val.size( ) - 2 );
 				else
-					cout << *fullEval( string( val ) );
+					cout << *fullEval( vm , string( val ) );
 			} );
 		return shared_variable_t( new variable_t( ) );
 	}
@@ -244,7 +248,7 @@ shared_variable_t fullEval( std::string&& splitStr )
 	auto succeed = phrase_parse( iter , end , gen , space , ast );
 	bline_ast b_ast = line_ast_to_bline_ast( std::move( ast ) );
 	BOOST_ASSERT( end == iter );
-	return ::evaluate( b_ast );
+	return evaluate( vm , b_ast );
 }
 
 
@@ -258,7 +262,7 @@ void qc_pcrer<false>::operator()( if_check_then_cnst<false , std::string>& text 
 	loop_split(
 		text ,
 		[ ] ( auto&& i , auto&& iter ) { return *iter == '\n' && ( i == 0 ? true : *( iter - 1 ) != '_' ); } ,
-		fullEval );
+		[ ] ( std::string v ) { fullEval( variables , move( v ) ); } );
 }
 void pcr_file( boost::filesystem::path & filename )
 {
