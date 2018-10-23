@@ -1,8 +1,9 @@
 ﻿#include "stdafx.h"
 #include "utils.h"
 #include "cross_utils.h"
-#include "qc_grammar.h"
 #include "qc_parser_runner.h"
+#include <sstream>
+#include <boost\stacktrace.hpp>
 
 static const std::unordered_map<std::string , std::string> languageExtensionDict
 {
@@ -26,187 +27,170 @@ static const std::set<std::string> supportedLanguages
 	"CS"
 };
 
-void indentialTab( std::ostream& o ) { for ( size_t i = 0; i < indent * 4; i++ )o << " "; }
+
+auto __indent::operator()( size_t indentLevel )-> _indent { return _indent { indentLevel }; }
+
+std::ostream& operator<<( std::ostream& o , __indent::_indent&& v )
+{
+	for ( size_t i = 0; i < v.indentLevel; i++ )o << '\t';
+	return o;
+}
+std::ostream& operator<<( std::ostream& o , __indent )
+{
+	for ( size_t i = 0; i < indentLevel; i++ )o << '\t';
+	return o;
+}
 
 void parseLang(
-	std::ostream& o , int indent , int tabsize ,
+	std::ostream& o ,
 	bool& isTagParsed ,
 	std::string & text ,
 	const std::string & tagVal ,
 	const std::string & toLang )
 {
+	using namespace std;
 	auto
 		isComment = tagVal == "$" ,
 		isRoot = tagVal == "|qc|" ,
 		isInterface = tagVal == "interface" ,
-		isNative = tagVal != "native";
+		isNative = tagVal == "native" ,
+		isSkip = false;
 	auto idx = ( isTagParsed || isComment ) ? 0 : getFirstNewline( text );
-	std::string subVal;
-	if ( idx == std::string::npos )
-	{
+	string subVal;
+	if ( idx == string::npos )
 		idx = text.length( );
-		subVal = text.substr( 0 , idx );
-		if ( !isNative )
-			convStr( subVal , toLang );
-	}
-	else if ( idx != 0 )
-	{
-		subVal = text.substr( 0 , idx );
-		if ( !isNative )
-			convStr( subVal , toLang );
-	}
+	subVal = text.substr( 0 , idx );
+	bool wasTagParsed = isTagParsed;
+	auto semicolon = ( subVal.length( ) != 0 ? ";" : "" );
+	boost::trim( subVal );
+	if ( !isTagParsed )
+		o << indent;
 
 	if ( tagVal == "class" || tagVal == "struct" || tagVal == "namespace" )
 	{
-		if ( !isTagParsed )
-		{
-			isTagParsed = true;
-			o << tagVal << ' ' << subVal << "{";
-		}
-		else
-		{
-			o << subVal;
-			tab( indent + tabsize , o );
-		}
+		convStr( subVal , toLang );
+		if ( !isTagParsed ) o << tagVal << ' ' << subVal;
 	}
 	else if ( isInterface )
 	{
 		if ( !isTagParsed )
 		{
-			isTagParsed = true;
-			o << "interface " << subVal << "{" << std::endl;
-		}
-		else
-		{
-			tab( indent + tabsize , o );
-			replaceAngleBrace( text );
-			checkStr( text , toLang );
-			convStr( text , toLang , false );
-			o << std::endl;
-			loop_split(
-				std::string_view( text ) ,
-				[ ] ( auto&& i , auto&& iter )
-				{
-					return *iter == '\n' && !( i == 0 ? false : *( iter - 1 ) == '_' );
-				} ,
-				[ &o ] ( std::string_view subVal )
-				{
-					if ( boost::contains( subVal , " gives " ) )
-					{
-						auto givesIdx = boost::find_first( subVal , " gives " ).begin( );
-						o <<
-							std::string( givesIdx + 7 , subVal.end( ) ) <<
-							' ' <<
-							subVal.substr( 0 , givesIdx - subVal.begin( ) ) <<
-							';' << std::endl;
-					}
-					else
-						o << "void " << subVal << ';' << std::endl;
-				}
-				);
+			convStr( subVal , toLang );
+			o << "interface " << subVal;
 		}
 	}
 	else if ( tagVal == "property" )
 	{
 		if ( !isTagParsed )
 		{
-			isTagParsed = true;
-
+			convStr( subVal , toLang );
 			auto ofIdx = boost::find_first( subVal , " of " ).begin( );
 			o <<
-				std::string( ofIdx + 4 , subVal.end( ) ) <<
+				string( ofIdx + 4 , subVal.end( ) ) <<
 				' ' <<
-				subVal.substr( 0 , ofIdx - subVal.begin( ) ) <<
-				"{";
+				subVal.substr( 0 , ofIdx - subVal.begin( ) );
 		}
-		else tab( indent + tabsize , o );
 	}
 	else if ( tagVal == "indexer" )
 	{
 		if ( !isTagParsed )
 		{
-			isTagParsed = true;
-
+			convStr( subVal , toLang , false );
 			auto ofIdx = boost::find_first( subVal , " of " ).begin( );
 			o <<
-				std::string( ofIdx + 4 , subVal.end( ) ) <<
+				string( ofIdx + 4 , subVal.end( ) ) <<
 				" this" <<
-				subVal.substr( 0 , ofIdx - subVal.begin( ) ) <<
-				"{";
+				subVal.substr( 0 , ofIdx - subVal.begin( ) );
 		}
-		else tab( indent + tabsize , o );
 	}
-	else if ( tagVal == "unsafe" || tagVal == "unchecked" || tagVal == "get" || tagVal == "set" || tagVal == "else" )
+	else if ( tagVal == "unsafe" || tagVal == "unchecked" || tagVal == "checked" || tagVal == "get" || tagVal == "set" || tagVal == "else" || tagVal == "try" || tagVal == "finally" || tagVal == "do" )
 	{
-		if ( !isTagParsed )
-		{
-			isTagParsed = true;
-			o << tagVal << " {";
-		}
-		else
-		{
-			o << subVal;
-			tab( indent + tabsize , o );
-		}
+		convStr( subVal , toLang );
+		if ( !isTagParsed ) o << tagVal << endl << indent << '{' << endl;
+		isSkip = true;
+		if ( subVal != "" )
+			o << indent( indentLevel + 1 ) << subVal << semicolon << endl;
 	}
-	else if ( isComment || isRoot )
-	{
-		if ( !isTagParsed ) isTagParsed = true;
-	}
+	else if ( isComment || isRoot || isNative ) isSkip = true;
 	else if ( tagVal == "function" )
 	{
 		using namespace boost::algorithm;
 
 		if ( !isTagParsed )
 		{
-			isTagParsed = true;
-
+			convStr( subVal , toLang , false );
 			if ( boost::contains( subVal , " gives " ) )
 			{
 				auto givesIdx = boost::find_first( subVal , " gives " ).begin( );
 				o <<
-					std::string( givesIdx + 7 , subVal.end( ) ) <<
+					string( givesIdx + 7 , subVal.end( ) ) <<
 					' ' <<
-					subVal.substr( 0 , givesIdx - subVal.begin( ) ) << "{";
+					subVal.substr( 0 , givesIdx - subVal.begin( ) );
 			}
-			else o << "void " << subVal << "{";
+			else o << "void " << subVal;
 		}
-		else tab( indent + tabsize , o );
 	}
 	else if ( tagVal == "forever" )
 	{
 		if ( !isTagParsed )
 		{
-			isTagParsed = true;
-			o << "while(true) {";
-		}
-		else
-		{
-			o << subVal;
-			tab( indent + tabsize , o );
+			o << "while(true) ";
 		}
 	}
 	else
 	{
-		if ( !isTagParsed && !isNative )
+		if ( !isTagParsed )
 		{
-			isTagParsed = true;
-			o << tagVal << '(' << subVal << "){";
-		}
-		else
-		{
-			o << subVal;
-			tab( indent + tabsize , o );
+			convStr( subVal , toLang );
+			o << tagVal << '(' << subVal << ")";
 		}
 	}
 
-	if ( isComment )o << "/*" << text << "*/" << std::endl;
-	else if ( isNative )o << text << std::endl;
-	else if ( isRoot ) convertTextToLang( o , text , toLang );
-	else if ( !isInterface )
+	if ( !isTagParsed )
 	{
-		auto restText = text.substr( idx );
-		convertTextToLang( o , restText , toLang );
+		if ( !isSkip )
+			o << endl << indent << '{' << endl;
+		if ( !( isComment || isRoot || isNative ) )
+			++indentLevel;
+		isTagParsed = true;
+	}
+
+	if ( text == "" || isspace( text[ 0 ] ) );
+	else if ( isComment )o << "/*" << text << "*/" << endl;
+	else if ( isNative )o << text << endl;
+	else if ( isRoot ) convertTextToLang( o , text , toLang );
+	else if ( isInterface )
+	{
+		auto _text = wasTagParsed ? "" : text.substr( idx );
+		auto& vText = wasTagParsed ? text : _text;
+		replaceAngleBrace( vText );
+		checkStr( vText , toLang );
+		convStr( vText , toLang , false );
+		loop_split(
+			string_view( vText ) ,
+			[ ] ( auto&& i , auto&& iter )
+			{ return *iter == '\n' && !( i == 0 ? false : *( iter - 1 ) == '_' ); } ,
+			[ &o , &semicolon ] ( string_view subVal )
+			{
+				if ( boost::contains( subVal , " gives " ) )
+				{
+					auto givesIdx = boost::find_first( subVal , " gives " ).begin( );
+					o <<
+						string( givesIdx + 7 , subVal.end( ) ) <<
+						' ' <<
+						subVal.substr( 0 , givesIdx - subVal.begin( ) ) <<
+						semicolon << endl;
+				}
+				else
+					o << "void " << subVal << semicolon << endl;
+			}
+		);
+	}
+	else
+	{
+		auto _text = wasTagParsed ? "" : text.substr( idx );
+		auto& vText = wasTagParsed ? text : _text;
+		convertTextToLang( o , vText , toLang );
 	}
 }
 
@@ -234,7 +218,7 @@ void convStr( std::string & val , const std::string & toLang , bool processNewLi
 	replaceAngleBrace( val );
 	replace_all( val , "also give" , "yield return" );
 	replace_all( val , "finalize" , "yield break" );
-	replace_all( val , "give " , "return " );
+	replace_all( val , "give" , "return" );
 	replace_all( val , "gen_of" , "System.Collections.Generic.IEnumerable" );
 	replace_all( val , "iter gen_of" , "System.Collections.Generic.IEnumerator" );
 	replace_all( val , "gen" , "System.Collections.IEnumerable" );
@@ -244,6 +228,8 @@ void convStr( std::string & val , const std::string & toLang , bool processNewLi
 	{
 		replace_all( val , "\n" , ";\n" );
 		replace_all( val , "_;" , "" );
+		replace_all( val , " ;" , ";" );
+		replace_all( val , "\t;" , ";" );
 		replace_all( val , "\n;" , "\n" );
 	}
 	if ( val[ 0 ] == ';' ) val = val.substr( 1 );
@@ -339,7 +325,16 @@ void convertTextToLang( std::ostream& o , std::string & text , const std::string
 				replaceAngleBrace( val );
 				checkStr( val , toLang );
 				convStr( val , toLang );
-				o << val;
+				loop_split(
+					val ,
+					[ ] ( auto&& idx , auto&& iter ) { return *iter == '\n'; } ,
+					[ &o ] ( std::string&& val )
+					{
+						trim( val );
+						if ( val.size( ) == 0 )return;
+						o << indent << val << std::endl;
+					}
+				);
 			}
 			else
 			{
@@ -388,6 +383,7 @@ int parseArgs( boost::program_options::variables_map vm )
 		arg /= filePath;
 	}
 	string toLang( ( !vm.count( "file" ) ) ? "qc" : vm[ "language" ].as<std::string>( ) );
+	bool indent = vm.count( "indent" );
 
 	if ( supportedLanguages.find( toLang ) == supportedLanguages.end( ) )
 	{
@@ -409,12 +405,12 @@ int parseArgs( boost::program_options::variables_map vm )
 
 		try
 		{
-			indent++;
+			++indentLevel;
 			if ( is_regular_file( arg ) )
-				parse_file( arg , toLang );
+				parse_file( arg , toLang , indent );
 			else if ( is_directory( arg ) )
-				traversePath( arg , toLang );
-			indent--;
+				traversePath( arg , toLang , indent );
+			--indentLevel;
 
 			cout << "Full parsing succeeded" << endl;
 
@@ -422,7 +418,7 @@ int parseArgs( boost::program_options::variables_map vm )
 		catch ( throwVal& val )
 		{
 
-			indent--;
+			--indentLevel;
 			cout << "Full parsing failed" << endl;
 
 			return val.errCode;
@@ -431,7 +427,7 @@ int parseArgs( boost::program_options::variables_map vm )
 	return 0;
 }
 
-void traversePath( boost::filesystem::path &arg , std::string &toLang )
+void traversePath( boost::filesystem::path &arg , std::string &toLang , bool indent )
 {
 	using namespace std;
 	using namespace std::string_literals;
@@ -441,29 +437,26 @@ void traversePath( boost::filesystem::path &arg , std::string &toLang )
 
 	auto truncname = arg.filename( ).string( );
 
-	indentialTab( cout );
-	cout << truncname << " Dir. parsing started" << endl;
+	cout << indent << truncname << " Dir. parsing started" << endl;
 
-	indent++;
+	++indentLevel;
 	try
 	{
 		for ( directory_iterator first( arg ) , end; first != end; first++ )
 		{
 			path narg = first->path( );
-			if ( is_regular_file( narg ) )parse_file( narg , toLang );
-			else if ( is_directory( narg ) )traversePath( narg , toLang );
+			if ( is_regular_file( narg ) )parse_file( narg , toLang , indent );
+			else if ( is_directory( narg ) )traversePath( narg , toLang , indent );
 			else
 				throw throwVal( "Path is neither a file not a directory" , notFileNorDir );
 		}
-		indentialTab( cout );
-		cout << truncname << " Dir. parsing succeeded" << endl;
-		indent--;
+		cout << ::indent << truncname << " Dir. parsing succeeded" << endl;
+		--indentLevel;
 	}
 	catch ( throwVal& )
 	{
-		indent--;
-		indentialTab( cout );
-		cout << truncname << " Dir. parsing failed" << endl;
+		--indentLevel;
+		cout << ::indent << truncname << " Dir. parsing failed" << endl;
 		throw;
 	}
 }
@@ -501,7 +494,7 @@ void parse_file(
 	succeed = phrase_parse( iter , end , qc , space , ast );
 }
 
-void parse_file( boost::filesystem::path &filename , std::string &toLang )
+void parse_file( boost::filesystem::path &filename , std::string &toLang , bool indent )
 {
 	if ( filename.extension( ) != ".qc" ) return;
 
@@ -516,40 +509,39 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang )
 
 	auto truncname = filename.filename( ).string( );
 
-	indentialTab( cout );
-	cout << truncname << " File parsing started" << endl;
+	cout << ::indent << truncname << " File parsing started" << endl;
 
 	parse_file( filename , storage , iter , end , succeeded , qc , ast );
 
 	if ( succeeded && iter == end )
 	{
+		auto csfile = filename.replace_extension( languageExtensionDict.at( toLang ) ).string( );
+		struct __end__
+		{
+			size_t indent;
+			__end__( ) :indent( indentLevel ) { indentLevel = 0; }
+			void restore( ) { this->~__end__( ); }
+			~__end__( ) { indentLevel = indent; }
+		} __end__;
+		ofstream o( csfile );
 		qc_parser parser;
-		std::ofstream o( filename.replace_extension( languageExtensionDict.at( toLang ) ).string( ) );
 		try
 		{
 			parser( ast , o , toLang );
-			indentialTab( cout );
-			cout << truncname << " File parsing succeeded" << endl;
+			__end__.restore( );
+			cout << ::indent << truncname << " File parsing succeeded" << endl;
 		}
 		catch ( throwVal& )
 		{
-			indentialTab( cout );
-			cout << truncname << " File parsing failed" << endl;
+			cout << ::indent << truncname << " File parsing failed" << endl;
 			throw;
 		}
 	}
 	else
 	{
-		indentialTab( cout );
-		cout << truncname << " File parsing failed" << endl;
+		cout << ::indent << truncname << " File parsing failed" << endl;
 		throw throwVal( "File parsing failed" , parsingFailed );
 	}
 }
 
-inline throwVal::throwVal( const std::string& first , int errCode ) :errCode( errCode )
-{
-	indent++;
-	indentialTab( std::cout );
-	std::cerr << "Error: " << first << std::endl;
-	indent--;
-}
+inline throwVal::throwVal( const std::string& first , int errCode ) :errCode( errCode ) { std::cerr << indent( indentLevel + 1 ) << "Error: " << first << std::endl; }

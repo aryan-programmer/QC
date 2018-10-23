@@ -39,17 +39,9 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 struct qc_parser
 {
-	qc_parser( ) :indent( 0 ) { }
-
 	void operator()( qc_data& qc , std::ostream& o , const std::string& toLang ) const;
 
 private:
-	enum { tabsize = 4 };
-
-	qc_parser( int indent );
-
-	int indent;
-
 	void operator()( qc_data_extra& qc , std::ostream& o = std::cout , const std::string& toLang = "" ) const;
 
 	struct qc_node_printer;
