@@ -2,8 +2,95 @@
 #include "utils.h"
 #include "cross_utils.h"
 #include "qc_parser_runner.h"
+#include "tag_block_manager.h"
 #include <sstream>
-#include <boost\stacktrace.hpp>
+#include <boost/format.hpp>
+#include <boost/stacktrace.hpp>
+#define BOOST_SCOPE_EXIT_CONFIG_USE_LAMBDAS
+#include <boost/scope_exit.hpp>
+
+#define caref const auto &
+
+caref l_Gives_ = " Gives ";
+caref l_To_ = " To ";
+caref lTo = "To";
+caref l_Step_ = " Step ";
+caref lStep = "Step";
+caref l_Of_ = " Of ";
+const std::unordered_map<std::string_view , std::string_view> replacements
+{
+	{"AlsoGive","yield return"},
+{"Finalize","yield break"},
+{"Give","return"},
+{"GenOf","System.Collections.Generic.IEnumerable"},
+{"IterGenOf","System.Collections.Generic.IEnumerator"},
+{"Gen","System.Collections.IEnumerable"},
+{"IterGen","System.Collections.IEnumerator"},
+{"Abstract","abstract"},
+{"As","as"},
+{"Ascending","ascending"},
+{"Asynchronous","async"},
+{"Await","await"},
+{"Base","base"},
+{"Boolean","bool"},
+{"Break","break"},
+{"Byte","byte"},
+{"Case","case"},
+{"Class","class"},
+{"Character","char"},
+{"Checked","checked"},
+{"Constant","const"},
+{"Continue","continue"},
+{"Decimal","decimal"},
+{"Default","default"},
+{"Delegate","delegate"},
+{"Double","double"},
+{"Enum","enum"},
+{"Event","event"},
+{"Explicit","explicit"},
+{"Extern","extern"},
+{"False","false"},
+{"Float","float"},
+{"Goto","goto"},
+{"Implicit","implicit"},
+{"In","in"},
+{"Integer","int"},
+{"Interface","interface"},
+{"Internal","internal"},
+{"Is","is"},
+{"Lock","lock"},
+{"Long","long"},
+{"New","new"},
+{"Null","null"},
+{"Object","object"},
+{"Operator","operator"},
+{"Out","out"},
+{"Override","override"},
+{"Parameters","params"},
+{"Private","private"},
+{"Protected","protected"},
+{"Public","public"},
+{"ReadOnly","readonly"},
+{"Reference","ref"},
+{"SByte","sbyte"},
+{"Sealed","sealed"},
+{"Short","short"},
+{"StackAlloc","stackalloc"},
+{"Static","static"},
+{"String","string"},
+{"Structure","struct"},
+{"Switch","switch"},
+{"Me","this"},
+{"Throw","throw"},
+{"True","true"},
+{"Virtual","virtual"},
+{"Void","void"},
+{"Volatile","volatile"},
+{"Var","var"},
+{"Using","using"},
+};
+
+#undef caref
 
 static const std::unordered_map<std::string , std::string> languageExtensionDict
 {
@@ -41,21 +128,20 @@ std::ostream& operator<<( std::ostream& o , __indent )
 	return o;
 }
 
-void parseLang(
-	std::ostream& o ,
-	bool& isTagParsed ,
-	std::string & text ,
-	const std::string & tagVal ,
-	const std::string & toLang )
+void parseLang( std::ostream& o , bool& isTagParsed ,
+				std::string & text , const tags & tagVal ,
+				const std::string & toLang )
 {
 	using namespace std;
 	auto
-		isComment = tagVal == "$" ,
-		isRoot = tagVal == "|qc|" ,
-		isInterface = tagVal == "interface" ,
-		isNative = tagVal == "native" ,
-		isSkip = false;
+		isComment = tagVal == tags::_Catch_ ,
+		isRoot = false ,
+		isInterface = false ,
+		isNative = tagVal == tags::_Native_ ,
+		isSkip = false ,
+		isCase = false;
 	auto idx = ( isTagParsed || isComment ) ? 0 : getFirstNewline( text );
+	boost::trim_left( text );
 	string subVal;
 	if ( idx == string::npos )
 		idx = text.length( );
@@ -66,62 +152,284 @@ void parseLang(
 	if ( !isTagParsed )
 		o << indent;
 
-	if ( tagVal == "class" || tagVal == "struct" || tagVal == "namespace" )
+	switch ( tagVal )
 	{
-		convStr( subVal , toLang );
-		if ( !isTagParsed ) o << tagVal << ' ' << subVal;
+	case tags::_QC_:
+	{
+		isRoot = true;
+		isSkip = true;
 	}
-	else if ( isInterface )
+	break;
+
+	case tags::_Class_: case tags::_Structure_: case tags::_Namespace_:
+		goto _CSNE_;
+
+	case tags::_Interface_:
 	{
 		if ( !isTagParsed )
 		{
+			isInterface = true;
 			convStr( subVal , toLang );
 			o << "interface " << subVal;
 		}
 	}
-	else if ( tagVal == "property" )
+	break;
+
+	case tags::_Enum_:
+		// Class Structure Namespace Enum
+	_CSNE_:
+	{
+		if ( !isTagParsed )
+		{
+			convStr( subVal , toLang , false );
+			o << to_string( tagVal , toLang ) << ' ' << subVal;
+		}
+	}
+	break;
+
+	case tags::_Native_:
+	{
+		isNative = true;
+		isSkip = true;
+	}
+	break;
+
+	case tags::_Property_:
 	{
 		if ( !isTagParsed )
 		{
 			convStr( subVal , toLang );
-			auto ofIdx = boost::find_first( subVal , " of " ).begin( );
+			auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
 			o <<
 				string( ofIdx + 4 , subVal.end( ) ) <<
 				' ' <<
 				subVal.substr( 0 , ofIdx - subVal.begin( ) );
 		}
 	}
-	else if ( tagVal == "indexer" )
+	break;
+
+	case tags::_Indexer_:
 	{
 		if ( !isTagParsed )
 		{
-			convStr( subVal , toLang , false );
-			auto ofIdx = boost::find_first( subVal , " of " ).begin( );
+			std::stringstream strm;
+			convertTextToLang( strm , subVal , toLang , false , false );
+			subVal = strm.str( );
+			auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
 			o <<
 				string( ofIdx + 4 , subVal.end( ) ) <<
 				" this" <<
 				subVal.substr( 0 , ofIdx - subVal.begin( ) );
 		}
 	}
-	else if ( tagVal == "unsafe" || tagVal == "unchecked" || tagVal == "checked" || tagVal == "get" || tagVal == "set" || tagVal == "else" || tagVal == "try" || tagVal == "finally" || tagVal == "do" )
+	break;
+
+	case tags::_Unsafe_:
+	case tags::_Unchecked_:
+	case tags::_Checked_:
+	case tags::_Get_:
+	case tags::_Set_: goto UUCGSETFDCFTCDFTD;
+
+	case tags::_If_:
+	case tags::_ElseIf_: goto _default_;
+
+	case tags::_Else_: case tags::_Try_: goto UUCGSETFDCFTCDFTD;
+
+	case tags::_Switch_: goto _default_;
+
+	case tags::_Case_:
+	case tags::_FTCase_:
 	{
-		convStr( subVal , toLang );
-		if ( !isTagParsed ) o << tagVal << endl << indent << '{' << endl;
+		if ( !isTagParsed )
+		{
+			o << "case ";
+			convertTextToLang( o , subVal , toLang , false , false );
+			o << ":";
+		}
+		isCase = true;
+	}
+	break;
+
+	case tags::_Default_:
+	case tags::_FTDefault_:
+		isCase = true;
+		goto UUCGSETFDCFTCDFTD;
+
+	case tags::_Catch_: goto _default_;
+
+	case tags::_Finally_:
+	case tags::_Do_:
+		// Unsafe Unchecked Checked Get Set Else Try Finally Do Case FallThroughCase Default FallThroughDefault
+	UUCGSETFDCFTCDFTD:
+	{
+		if ( !isTagParsed )
+		{
+			o << to_string( tagVal , toLang );
+			o << endl;
+			if ( !isCase ) o << indent << '{' << endl;
+		}
 		isSkip = true;
 		if ( subVal != "" )
-			o << indent( indentLevel + 1 ) << subVal << semicolon << endl;
+		{
+			o << indent( indentLevel + 1 );
+			convertTextToLang( o , subVal , toLang , false , false );
+			o << semicolon << endl;
+		}
 	}
-	else if ( isComment || isRoot || isNative ) isSkip = true;
-	else if ( tagVal == "function" )
+	break;
+
+	case tags::_Until_:
+	{
+		if ( !isTagParsed )
+		{
+			o << "while( !( ";
+			convertTextToLang( o , subVal , toLang , false , false );
+			o << " ) )";
+		}
+	}
+	break;
+
+	case tags::_While_: goto _default_;
+
+	case tags::_For_:
+	{
+		if ( !isTagParsed )
+		{
+			using qi::lexeme;
+			using qi::lit;
+			using qi::phrase_parse;
+			using ascii::alnum;
+			using ascii::space;
+			using ascii::char_;
+
+			std::stringstream strm;
+			convertTextToLang( strm , subVal , toLang , false , false );
+			subVal = strm.str( );
+			auto subValStart = subVal.begin( );
+			auto subValEnd = subVal.end( );
+			std::vector<std::string> vec;
+			bool newVar = false;
+			auto res = phrase_parse(
+				subValStart ,
+				subValEnd ,
+				lexeme[ -lit( "var " )[ phx::ref( newVar ) = true ] >> +alnum ] >> '=' >>
+				lexeme[ +( char_ - l_To_ ) ] >> lTo >>
+				lexeme[ +( char_ - l_Step_ ) ] >>
+				-( lStep >> lexeme[ +char_ ] ) ,
+				space , vec );
+			if ( vec.size( ) == 4 )
+			{
+				o <<
+					boost::format(
+						"for(%5% %1% = %2%; %1% <= %3%; %1% += %4% )" )
+					% vec[ 0 ]
+					% vec[ 1 ]
+					% vec[ 2 ]
+					% vec[ 3 ]
+					% ( newVar ? " var" : "" );
+			}
+			else if ( vec.size( ) == 3 )
+			{
+				o <<
+					boost::format(
+						"for(%4% %1% = %2%; %1% <= %3%; ++%1% )" )
+					% vec[ 0 ]
+					% vec[ 1 ]
+					% vec[ 2 ]
+					% ( newVar ? " var" : "" );
+			}
+			else
+			{
+				throw throwVal( "Invalid For loop syntax" , invalidSyntax );
+			}
+		}
+	}
+	break;
+
+	case tags::_RevFor_:
+	{
+		if ( !isTagParsed )
+		{
+			using qi::lexeme;
+			using qi::lit;
+			using qi::phrase_parse;
+			using ascii::alnum;
+			using ascii::space;
+			using ascii::char_;
+
+			std::stringstream strm;
+			convertTextToLang( strm , subVal , toLang , false , false );
+			subVal = strm.str( );
+			auto subValStart = subVal.begin( );
+			auto subValEnd = subVal.end( );
+			std::vector<std::string> vec;
+			bool newVar = false;
+			auto res = phrase_parse(
+				subValStart ,
+				subValEnd ,
+				lexeme[ -( lit( "var " )[ phx::ref( newVar ) = true ] ) >>
+				+alnum ] >> '=' >>
+				lexeme[ +( char_ - l_To_ ) ] >> lTo >>
+				lexeme[ +( char_ - l_Step_ ) ] >>
+				-( lStep >> lexeme[ +char_ ] ) ,
+				space , vec );
+			if ( vec.size( ) == 4 )
+			{
+				o <<
+					boost::format(
+						"for(%5% %1% = %3%; %1% >= %2%; %1% -= %4% )" )
+					% vec[ 0 ]
+					% vec[ 1 ]
+					% vec[ 2 ]
+					% vec[ 3 ]
+					% ( newVar ? " var" : "" );
+			}
+			else if ( vec.size( ) == 3 )
+			{
+				o <<
+					boost::format(
+						"for(%4% %1% = %3%; %1% >= %2%; --%1% )" )
+					% vec[ 0 ]
+					% vec[ 1 ]
+					% vec[ 2 ]
+					% ( newVar ? " var" : "" );
+			}
+			else
+			{
+				throw throwVal( "Invalid RevFor loop syntax" , invalidSyntax );
+			}
+		}
+	}
+	break;
+
+	case tags::_ForEach_: goto _default_;
+
+	case tags::_ForEver_:
+	{
+		if ( !isTagParsed )
+			o << "while(true)";
+	}
+	break;
+
+	case tags::_Comment_:
+	{
+		isComment = true;
+		isSkip = true;
+	}
+	break;
+
+	case tags::_Function_:
 	{
 		using namespace boost::algorithm;
 
 		if ( !isTagParsed )
 		{
-			convStr( subVal , toLang , false );
-			if ( boost::contains( subVal , " gives " ) )
+			std::stringstream strm;
+			convertTextToLang( strm , subVal , toLang , false , false );
+			subVal = strm.str( );
+			if ( boost::contains( subVal , l_Gives_ ) )
 			{
-				auto givesIdx = boost::find_first( subVal , " gives " ).begin( );
+				auto givesIdx = boost::find_first( subVal , l_Gives_ ).begin( );
 				o <<
 					string( givesIdx + 7 , subVal.end( ) ) <<
 					' ' <<
@@ -130,26 +438,27 @@ void parseLang(
 			else o << "void " << subVal;
 		}
 	}
-	else if ( tagVal == "forever" )
+	break;
+
+	default: _default_:
 	{
 		if ( !isTagParsed )
 		{
-			o << "while(true) ";
+			o << to_string( tagVal , toLang ) << '(';
+			convertTextToLang( o , subVal , toLang , false , false );
+			o << ")";
 		}
 	}
-	else
-	{
-		if ( !isTagParsed )
-		{
-			convStr( subVal , toLang );
-			o << tagVal << '(' << subVal << ")";
-		}
+	break;
 	}
 
 	if ( !isTagParsed )
 	{
 		if ( !isSkip )
-			o << endl << indent << '{' << endl;
+		{
+			o << endl;
+			if ( !isCase ) o << indent << '{' << endl;
+		}
 		if ( !( isComment || isRoot || isNative ) )
 			++indentLevel;
 		isTagParsed = true;
@@ -158,7 +467,11 @@ void parseLang(
 	if ( text == "" || isspace( text[ 0 ] ) );
 	else if ( isComment )o << "/*" << text << "*/" << endl;
 	else if ( isNative )o << text << endl;
-	else if ( isRoot ) convertTextToLang( o , text , toLang );
+	else if ( isRoot )
+	{
+		convertTextToLang( o , text , toLang );
+		o << endl;
+	}
 	else if ( isInterface )
 	{
 		auto _text = wasTagParsed ? "" : text.substr( idx );
@@ -172,9 +485,9 @@ void parseLang(
 			{ return *iter == '\n' && !( i == 0 ? false : *( iter - 1 ) == '_' ); } ,
 			[ &o , &semicolon ] ( string_view subVal )
 			{
-				if ( boost::contains( subVal , " gives " ) )
+				if ( boost::contains( subVal , l_Gives_ ) )
 				{
-					auto givesIdx = boost::find_first( subVal , " gives " ).begin( );
+					auto givesIdx = boost::find_first( subVal , l_Gives_ ).begin( );
 					o <<
 						string( givesIdx + 7 , subVal.end( ) ) <<
 						' ' <<
@@ -190,7 +503,12 @@ void parseLang(
 	{
 		auto _text = wasTagParsed ? "" : text.substr( idx );
 		auto& vText = wasTagParsed ? text : _text;
-		convertTextToLang( o , vText , toLang );
+		if ( vText != "" )
+		{
+			convertTextToLang( o , vText , toLang );
+			if ( vText[ vText.length( ) - 1 ] != '\n' )
+				o << endl;
+		}
 	}
 }
 
@@ -211,18 +529,62 @@ void commonReplacement( std::string & val )
 	replace_all( val , "right shift" , ">>" );
 }
 
+struct isEqualConsiderSpace
+{
+	bool operator()( const char& arg1 , const char& arg2 ) const
+	{
+		static const auto isSpace = [ ] ( char ch ) { return ch == ' ' || ch == '\t'; };
+		if ( isSpace( arg1 ) && isSpace( arg2 ) )
+		{
+			return true;
+		}
+		return arg1 == arg2;
+	}
+};
+
+inline void replaceAllConSpace(
+	std::string& Input ,
+	const std::string& Search ,
+	const std::string& Format )
+{
+	using namespace boost::algorithm;
+	boost::algorithm::find_format_all(
+		Input ,
+		::boost::algorithm::first_finder( Search , isEqualConsiderSpace( ) ) ,
+		::boost::algorithm::const_formatter( Format ) );
+	boost::algorithm::find_format_all(
+		Input ,
+		::boost::algorithm::first_finder(
+			"\n" + Search.substr( 1 ) , isEqualConsiderSpace( ) ) ,
+		::boost::algorithm::const_formatter(
+			"\n" + Format.substr( 1 ) ) );
+}
+
+//Replace All Consider Space, Start And End
+void racssae(
+	std::string& input ,
+	std::string_view search ,
+	std::string replace )
+{
+	replaceAllConSpace(
+		input ,
+		" " + std::string( search ) + " " ,
+		" " + replace + " " );
+	if ( boost::algorithm::ends_with( input , search ) )
+	{
+		input =
+			input.substr( 0 , input.size( ) - search.size( ) ) +
+			replace;
+	}
+	if ( boost::algorithm::starts_with( input , search ) )
+		input = replace + input.substr( search.length( ) );
+}
+
 void convStr( std::string & val , const std::string & toLang , bool processNewLines )
 {
 	using namespace boost::algorithm;
-
 	replaceAngleBrace( val );
-	replace_all( val , "also give" , "yield return" );
-	replace_all( val , "finalize" , "yield break" );
-	replace_all( val , "give" , "return" );
-	replace_all( val , "gen_of" , "System.Collections.Generic.IEnumerable" );
-	replace_all( val , "iter gen_of" , "System.Collections.Generic.IEnumerator" );
-	replace_all( val , "gen" , "System.Collections.IEnumerable" );
-	replace_all( val , "iter gen" , "System.Collections.IEnumerator" );
+	for ( auto& i : replacements ) racssae( val , i.first , std::string( i.second ) );
 	commonReplacement( val );
 	if ( processNewLines )
 	{
@@ -245,12 +607,23 @@ void checkStr( const std::string_view & val , const std::string & toLang )
 {
 	using namespace std::string_literals;
 	std::list<char> closeBraces;
-	size_t idx = 0;
-	for ( auto first = val.begin( ) , end = val.end( );
-		  first != end;
-		  first++ , idx++ )
+	size_t i = 0;
+	bool isEnabled = true;
+	for ( auto iter = val.begin( ) , end = val.end( );
+		  iter != end;
+		  iter++ , i++ )
 	{
-		auto& chr = *first;
+		if ( !isEnabled )
+		{
+			if ( isStrQuote( i , iter ) ) isEnabled = true;
+			continue;
+		}
+		BOOST_SCOPE_EXIT_ALL( &isEnabled , &i , &iter )
+		{
+			if ( isEnabled && isStrQuote( i , iter ) )
+				isEnabled = false;
+		};
+		auto& chr = *iter;
 		if ( allOpenBraces.find( chr ) != allOpenBraces.end( ) )
 		{
 			// chr is an open brace, lets add it to the checking list, closeBraces.
@@ -267,8 +640,8 @@ void checkStr( const std::string_view & val , const std::string & toLang )
 					// chr is a close brace, but not the correct one,
 					// so the code is incorrect.
 					auto loc = val.substr(
-						val.find_last_of( '\n' , idx + 1 ) + 1 ,
-						getFirstNewline( val , idx ) );
+						val.find_last_of( '\n' , i + 1 ) + 1 ,
+						getFirstNewline( val , i ) );
 					throw throwVal( (
 						"Expected \""s +
 						expectedCloseBrace +
@@ -305,41 +678,90 @@ void checkStr( const std::string_view & val , const std::string & toLang )
 	if ( errStr != "" ) throw throwVal( errStr , braceMismatch );
 }
 
-void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang )
+std::string WriteDoLoop( std::string & val , std::ostream & o , const std::string & toLang )
+{
+	using namespace boost::algorithm;
+
+	auto loopCondIter = boost::find( val , first_finder( "While " , isEqualConsiderSpace( ) ) ).begin( );
+	bool isWhile = true;
+	if ( loopCondIter == val.end( ) )
+	{
+		loopCondIter = boost::find( val , first_finder( "Until " , isEqualConsiderSpace( ) ) ).begin( );
+		if ( loopCondIter == val.end( ) )
+			throw throwVal( "Invalid Do loop syntax" , invalidSyntax );
+		isWhile = false;
+	}
+
+	auto loopCondIdx = loopCondIter - val.begin( );
+	auto loopCondEndIdx = getFirstNewline( val , loopCondIdx );
+	auto loopCond = val.substr( loopCondIdx + 6 , loopCondEndIdx - loopCondIdx - 6 );
+	o << " while( ";
+	if ( !isWhile )o << " ( !";
+	o << loopCond;
+	if ( !isWhile )o << " )";
+	o << " );" << std::endl;
+	return val.substr( loopCondEndIdx );
+}
+
+void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang , bool doStartIndent , bool processNewLines )
 {
 	using namespace boost::algorithm;
 
 	replace_all( text , "\\|]~" , ">" );
 	replace_all( text , "\\~[|" , "<" );
+	checkStr( text , toLang );
 
 	size_t idx = 0;
+	bool start = true;
 	loop_split(
 		text ,
 		[ ] ( auto&& idx , auto&& iter ) { return isStrQuote( idx , iter ); } ,
-		[ &idx , &toLang , &o ] ( std::string&& val )
+		[
+			&idx ,
+			&toLang ,
+			&o ,
+			&doStartIndent ,
+			&start ,
+			&processNewLines
+		] ( std::string&& val )
 		{
 			bool isEven = ( idx % 2 ) == 0;
 			replace_all( val , "\\`" , "`" );
 			if ( isEven )
 			{
 				replaceAngleBrace( val );
-				checkStr( val , toLang );
-				convStr( val , toLang );
+				convStr( val , toLang , processNewLines );
 				loop_split(
 					val ,
-					[ ] ( auto&& idx , auto&& iter ) { return *iter == '\n'; } ,
-					[ &o ] ( std::string&& val )
+					[ ] ( auto&& idx , auto&& iter )
+					{
+						return *iter == '\n';
+					} ,
+					[
+						&o ,
+						&doStartIndent ,
+						&start ,
+						&idx
+					] ( std::string&& val )
 					{
 						trim( val );
 						if ( val.size( ) == 0 )return;
-						o << indent << val << std::endl;
+						if ( !start )o << std::endl;
+						if ( !doStartIndent && start );
+						else o << indent;
+						o << val;
+						start = false;
 					}
-				);
+					);
 			}
 			else
 			{
 				replace_all( val , R"(")" , R"("")" );
+				if ( !start )o << std::endl;
+				if ( !doStartIndent && start );
+				else o << indent( indentLevel + 1 );
 				o << R"(@")" << val << R"(")";
+				start = false;
 			}
 			idx++;
 		} );
@@ -512,7 +934,6 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang , bool 
 	cout << ::indent << truncname << " File parsing started" << endl;
 
 	parse_file( filename , storage , iter , end , succeeded , qc , ast );
-
 	if ( succeeded && iter == end )
 	{
 		auto csfile = filename.replace_extension( languageExtensionDict.at( toLang ) ).string( );
@@ -544,4 +965,10 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang , bool 
 	}
 }
 
-inline throwVal::throwVal( const std::string& first , int errCode ) :errCode( errCode ) { std::cerr << indent( indentLevel + 1 ) << "Error: " << first << std::endl; }
+inline throwVal::throwVal( const std::string& first , int errCode ) :errCode( errCode )
+{
+	std::cerr <<
+		"Error: " << first << std::endl <<
+		"STACKTRACE: " << std::endl <<
+		boost::stacktrace::stacktrace( ) << std::endl;
+}

@@ -1,81 +1,71 @@
 #include "stdafx.h"
+#include "tag_block_manager.h"
 #include "qc_grammar.h"
+#include <boost/phoenix/function/adapt_function.hpp>
 
-const std::unordered_map<std::string , std::string> shorthandsAndOfficialKeywords
+std::string __GetEndString( tags tag )
 {
-	{"C", "class" },
-	{"S", "struct" },
-	{"I", "interface" },
-	{"P", "property" },
-	{"F", "function" },
-	{"W", "while" },
-	{"?", "class" },
-	{"!", "struct" },
-	{"^", "interface" },
-	{"=", "property" },
-	{"()", "function" },
-	{"[]", "indexer" },
-	{"in", "foreach" },
-	{"idxr", "indexer" },
-	{"elif", "else if" },
-	{"func", "function" },
-	{"prop", "property" },
-};
 
+	return std::string( to_string( tag , "QC" , true ) );
+}
+BOOST_PHOENIX_ADAPT_FUNCTION( std::string , GetEndStringParser , __GetEndString , 1 );
 
 struct qc_parser::qc_node_printer : boost::static_visitor<>
 {
 	qc_node_printer(
-		std::ostream& o ,
-		const std::string& toLang ,
-		const std::string& tagVal ,
-		bool& isTagParsed ) :
+		std::ostream& o , const std::string& toLang ,
+		const tags& tagVal , bool& isTagParsed , bool& isDoLoop ) :
 		o { o } , toLang { toLang } , tagVal { tagVal } ,
-		isTagParsed { isTagParsed }
-	{ }
+		isTagParsed { isTagParsed } , isDoLoop { isDoLoop } { }
 
 	void operator()( qc_data& qc ) const
 	{
 		if ( !isTagParsed ) { std::string s; ( *this )( s ); }
+		isDoLoop = qc.name == tags::_Do_;
 		qc_parser( )( qc , o , toLang );
 	}
 
 	void operator()( std::string& text ) const
-	{
-		parseLang( o , isTagParsed , text , tagVal , toLang );
-	}
+	{ parseLang( o , isTagParsed , text , tagVal , toLang ); }
 
 	std::ostream& o;
 	const std::string& toLang;
-	const std::string& tagVal;
+	const tags& tagVal;
 	bool& isTagParsed;
+	bool& isDoLoop;
 };
 
 void qc_parser::operator()( qc_data& qc , std::ostream& o , const std::string& toLang ) const
 {
 	auto qce = qc_data_extra { std::move( qc ),false };
 	( *this )( qce , o , toLang );
+	qc = std::move( qce.qc );
 }
 
 void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::string& toLang ) const
 {
-	using namespace std;
-
-	auto& mutTagVat = qc.qc.name;
-	try { mutTagVat = shorthandsAndOfficialKeywords.at( mutTagVat ); }
-	catch ( ... ) { }
-	const string& tagVal = qc.qc.name;
-
+	const auto& tagVal = qc.qc.name;
+	bool doesDoLoopNeedParsing = false;
 	for ( auto& node : qc.qc.children )
 	{
-		boost::apply_visitor( qc_node_printer( o , toLang , tagVal , qc.tagParsed ) , node );
+		if ( doesDoLoopNeedParsing )
+		{
+			auto val = WriteDoLoop(
+				boost::get<std::string>( node ) ,
+				o ,
+				toLang );
+			doesDoLoopNeedParsing = false;
+			qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing )(
+				 val );
+		}
+		else boost::apply_visitor( qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing ) , node );
 	}
 
-
-	if ( tagVal != "native"&&tagVal != "$"&&tagVal != "|qc|" )
+	if ( tagVal != tags::_Native_ && tagVal != tags::_Comment_ && tagVal != tags::_QC_ )
 	{
 		--indentLevel;
-		o << indent << '}' << endl;
+		o << indent << to_string( tagVal , toLang , true );
+		if ( qc.qc.name != tags::_Do_ )o << std::endl;
 	}
 }
 
@@ -88,32 +78,16 @@ qc_grammar::qc_grammar( ) :qc_grammar::base_type( qc , "qc" )
 	using ascii::char_;
 	using ascii::string;
 	using namespace qi::labels;
-
-	using phoenix::construct;
-	using phoenix::val;
+	using phx::val;
 
 	text %= lexeme[ +( char_ - '<' ) ];
 	node %= qc | text;
 
-	start_tag %=
-		'<'
-		>> !lit( '/' )
-			> lexeme[ +( char_ - '>' ) ]
-			> '>'
-		;
+	start_tag %= '<' >> !lit('/') > ( DEFINE_PARSER ) > '>';
 
-	end_tag =
-		( "</>" ) |
-		( "</"
-			> string( _r1 )
-			> '>' )
-		;
+	end_tag = '<' > string( GetEndStringParser( _r1 ) ) > '>';
 
-	qc %=
-		start_tag[ _a = _1 ]
-			> *node
-			> end_tag( _a )
-		;
+	qc %= start_tag[ _a = _1 ] > *node > end_tag( _a );
 
 	qc.name( "xml" );
 	node.name( "node" );
@@ -128,7 +102,7 @@ qc_grammar::qc_grammar( ) :qc_grammar::base_type( qc , "qc" )
 			<< val( "Error! Expecting " )
 			<< _4                               // what failed?
 			<< val( " here: \"" )
-			<< construct<std::string>( _3 , _2 )   // iterators to error-pos, end
+			<< phx::construct<std::string>( _3 , _2 )   // iterators to error-pos, end
 			<< val( "\"" )
 			<< std::endl
 			);

@@ -33,8 +33,8 @@ qc_line_ast_generator::qc_line_ast_generator( ) :qc_line_ast_generator::base_typ
 	using ascii::char_;
 	using namespace qi::labels;
 
-	using phoenix::construct;
-	using phoenix::val;
+	using phx::construct;
+	using phx::val;
 
 	expr.name( "expr" );
 	operator_.name( "operator" );

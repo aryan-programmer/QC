@@ -3,6 +3,7 @@
 #include "cross_utils.h"
 #include "line_ast_funcs.h"
 #include "qc_pcr_macros.h"
+#include "tag_block_manager.h"
 #include <boost\multiprecision\cpp_int.hpp>
 #include <boost\scope_exit.hpp>
 
@@ -22,7 +23,7 @@ template<bool check>
 void pcr_qc( qc_data& qc )
 {
 	auto tagParsed = false;
-	const std::string& tagVal = qc.name;
+	const auto& tagVal = qc.name;
 	for ( auto& node : qc.children )
 		boost::apply_visitor( qc_pcrer<check>( tagVal , tagParsed ) , node );
 }
@@ -30,19 +31,19 @@ void pcr_qc( qc_data& qc )
 template<bool check>
 struct qc_pcrer : boost::static_visitor<>
 {
-	qc_pcrer( const std::string& tagVal , bool& isTagParsed ) :
+	qc_pcrer( const tags& tagVal , bool& isTagParsed ) :
 		tagVal { tagVal } , isTagParsed { isTagParsed } { }
 
 	forceinline void operator()( qc_data& qc ) const { pcr_qc<check>( qc ); }
 	void operator()( if_check_then_cnst<check , std::string>& text ) const;
 
-	const std::string& tagVal;
+	const tags& tagVal;
 	bool& isTagParsed;
 };
 
 template<> void qc_pcrer<true>::operator()( if_check_then_cnst<true , std::string>& text ) const
 {
-	if ( tagVal != "$" )
+	if ( tagVal != tags::_Comment_ )
 	{
 		loop_split_with_enable_disable(
 			std::string_view( text ) ,

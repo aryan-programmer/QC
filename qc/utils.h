@@ -10,6 +10,7 @@ static constexpr int invalidFile = 7;
 static constexpr int unsupportedLanguage = 8;
 static constexpr int invalidExpr = 9;
 static constexpr int invalidTypes = 10;
+static constexpr int invalidSyntax = 11;
 
 struct __indent
 {
@@ -20,12 +21,13 @@ static __indent indent;
 std::ostream& operator<<( std::ostream& o , __indent::_indent&& v );
 std::ostream& operator<<( std::ostream& o , __indent );
 
-void parseLang( std::ostream& o, bool& isTagParsed, std::string & text, const std::string & tagVal, const std::string & toLang );
+void parseLang( std::ostream& o, bool& isTagParsed, std::string & text, const tags & tagVal, const std::string & toLang );
 void commonReplacement( std::string & val );
-void convStr( std::string & val , const std::string & toLang , bool processNewLines = true );
+void convStr( std::string & val, const std::string & toLang, bool processNewLines = true );
 void replaceAngleBrace( std::string & val );
 void checkStr( const std::string_view & val , const std::string & toLang );
-void convertTextToLang( std::ostream& o, std::string & text, const std::string& toLang );
+std::string WriteDoLoop( std::string& val , std::ostream& o , const std::string & toLang );
+void convertTextToLang( std::ostream& o, std::string & text, const std::string& toLang, bool doIndent = true, bool processNewLines = true );
 size_t getFirstNewline( const std::string_view& val , size_t off = 0 );
 int parseArgs( boost::program_options::variables_map vm );
 
