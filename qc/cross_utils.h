@@ -29,7 +29,7 @@ size_t find_last_of( const str_t& text , size_t after , CkeckingFunc&& checkingF
 {
 	if ( after >= text.size( ) )return str_t::npos;
 	auto iter = text.begin( ) + after;
-	for ( size_t i = text.size() - 1; i >= 0; i-- )
+	for ( size_t i = text.size( ) - 1; i >= 0; i-- )
 		if ( checkingFunc( i , iter ) ) return i;
 	return str_t::npos;
 }
@@ -39,7 +39,7 @@ size_t find_last_not_of( const str_t& text , size_t after , CkeckingFunc&& check
 {
 	if ( after >= text.size( ) )return str_t::npos;
 	auto iter = text.begin( ) + after;
-	for ( size_t i = text.size() - 1; i >= 0; i-- )
+	for ( size_t i = text.size( ) - 1; i >= 0; i-- )
 		if ( !checkingFunc( i , iter ) ) return i;
 	return str_t::npos;
 }

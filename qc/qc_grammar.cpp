@@ -4,10 +4,7 @@
 #include <boost/phoenix/function/adapt_function.hpp>
 
 std::string __GetEndString( tags tag )
-{
-
-	return std::string( to_string( tag , "QC" , true ) );
-}
+{ return std::string( to_string( tag , "QC" , true ) ); }
 BOOST_PHOENIX_ADAPT_FUNCTION( std::string , GetEndStringParser , __GetEndString , 1 );
 
 struct qc_parser::qc_node_printer : boost::static_visitor<>
@@ -56,15 +53,15 @@ void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::str
 				toLang );
 			doesDoLoopNeedParsing = false;
 			qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing )(
-				 val );
+				val );
 		}
 		else boost::apply_visitor( qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing ) , node );
 	}
 
-	if ( tagVal != tags::_Native_ && tagVal != tags::_Comment_ && tagVal != tags::_QC_ )
+	if ( tagVal != tags::_Native_ && tagVal != tags::_QC_ )
 	{
 		--indentLevel;
-		o << indent << to_string( tagVal , toLang , true );
+		o << std::endl << indent << to_string( tagVal , toLang , true );
 		if ( qc.qc.name != tags::_Do_ )o << std::endl;
 	}
 }
@@ -83,10 +80,8 @@ qc_grammar::qc_grammar( ) :qc_grammar::base_type( qc , "qc" )
 	text %= lexeme[ +( char_ - '<' ) ];
 	node %= qc | text;
 
-	start_tag %= '<' >> !lit('/') > ( DEFINE_PARSER ) > '>';
-
+	start_tag %= '<' >> !lit( '/' ) > ( DEFINE_PARSER ) > '>';
 	end_tag = '<' > string( GetEndStringParser( _r1 ) ) > '>';
-
 	qc %= start_tag[ _a = _1 ] > *node > end_tag( _a );
 
 	qc.name( "xml" );
