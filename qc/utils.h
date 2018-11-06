@@ -1,22 +1,21 @@
 #pragma once
 
-static constexpr int unknownError = -2;
-static constexpr int invalidCommandLineParameters = -1;
-static constexpr int noInpFileOrDir = 1;
-static constexpr int notFileNorDir = 2;
-static constexpr int tagMismatch = 3;
+static constexpr int unknownError = -1;
+static constexpr int invalidCommandLineParameters = 1;
+static constexpr int noInpFileOrDir = 2;
+static constexpr int notFileNorDir = 3;
 static constexpr int braceMismatch = 4;
 static constexpr int unableToOpenFileForInput = 5;
 static constexpr int unableToOpenFileForOutput = 6;
 static constexpr int parsingFailed = 7;
 static constexpr int unsupportedLanguage = 8;
-static constexpr int invalidExpr = 9;
-static constexpr int invalidTypes = 10;
-static constexpr int invalidLoopSyntax = 11;
-static constexpr int propertyNotSupported = 12;
-static constexpr int indexerNotSupported = 13;
-static constexpr int getSetNotSupported = 14;
-static constexpr int finallyNotSupported = 15;
+static constexpr int invalidLoopSyntax = 9;
+static constexpr int propertyNotSupported = 10;
+static constexpr int indexerNotSupported = 11;
+static constexpr int getSetNotSupported = 12;
+static constexpr int finallyNotSupported = 13;
+static constexpr int eventNotSupported = 14;
+static constexpr int addRemoveNotSupported = 15;
 static constexpr int invalidPropertySyntax = 16;
 static constexpr int invalidIndexerSyntax = 17;
 
@@ -44,8 +43,7 @@ void traversePath( boost::filesystem::path &arg , std::string &toLang , bool ind
 void parse_file( boost::filesystem::path &filename , std::string &toLang , bool indent );
 void parse_file( boost::filesystem::path & filename , std::string &storage , std::string::const_iterator &iter , std::string::const_iterator &end , bool &succeed , qc_grammar &qc , qc_data &ast );
 
-template<typename Iter>
-forceinline bool isStrQuote( size_t i , Iter iter )
+template<typename Iter>forceinline bool isStrQuote( size_t i , Iter iter )
 { return ( *iter == '`' && ( i != 0 ? *( iter - 1 ) != '\\' : true ) ); }
 
 class throwVal

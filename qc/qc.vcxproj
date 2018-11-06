@@ -184,12 +184,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cross_utils.h" />
-    <ClInclude Include="line_ast_funcs.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="qc_grammar.h" />
-    <ClInclude Include="qc_parser_runner.h" />
-    <ClInclude Include="qc_pcr_macros.h" />
-    <ClInclude Include="singleton.h" />
     <ClInclude Include="statics.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="tag_block_manager.h" />
@@ -198,10 +194,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cross_utils.cpp" />
-    <ClCompile Include="line_ast_funcs.cpp" />
     <ClCompile Include="qc.cpp" />
     <ClCompile Include="qc_grammar.cpp" />
-    <ClCompile Include="qc_parser_runner.cpp" />
     <ClCompile Include="statics.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

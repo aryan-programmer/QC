@@ -2,16 +2,8 @@
 #include "tag_block_manager.h"
 #include <mutex>
 
-const char* empty_str( )
-{
-	static const char* val = "";
-	return val;
-}
-const char* closeBrace( )
-{
-	static const char* val = "}";
-	return val;
-}
+const char* empty_str( ) { static const char* val = ""; return val; }
+const char* closeBrace( ) { static const char* val = "}"; return val; }
 
 std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string_view , std::string_view>>> constructsMap
 {
@@ -56,7 +48,10 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 { tags::_Comment_,{"/*","*/"} },
 {tags::_Function_,{empty_str( ),closeBrace( )}},
 {tags::_Lock_,{"lock",closeBrace( ) } },
-{tags::_Using_,{"using",closeBrace( ) } }
+{tags::_Using_,{"using",closeBrace( ) } },
+{tags::_Event_,{empty_str( ),closeBrace( ) } },
+{tags::_Add_,{"add",closeBrace( ) } },
+{tags::_Remove_,{"remove",closeBrace( ) } },
 		}
 	},
 	{
@@ -93,9 +88,9 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 { tags::_ForEach_,{"for",closeBrace( )} },
 { tags::_ForEver_,{ "while( true )",closeBrace( )} },
 { tags::_Comment_,{"/*","*/"} },
-{tags::_Function_,{empty_str( ),closeBrace( )}},
-{tags::_Lock_,{"{::std::lock_guard<::std::mutex> __mutex_locker__","} }"}},
-{tags::_Using_,{empty_str( ),closeBrace( ) } }
+{ tags::_Function_,{empty_str( ),closeBrace( )}},
+{ tags::_Lock_,{"{::std::lock_guard<::std::mutex> __mutex_locker__","} }"}},
+{ tags::_Using_,{empty_str( ),closeBrace( ) } }
 		}
 	},
 {

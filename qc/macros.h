@@ -50,7 +50,10 @@ BOOST_PP_VARIADIC_TO_SEQ(\
 	(Comment	)((0)			),\
 	(Function	)((0)			),\
 	(Lock		)((1)(Unlock)	),\
-	(Using		)((0)			)\
+	(Using		)((0)			),\
+	(Event		)((0)			),\
+	(Add		)((0)			),\
+	(Remove		)((0)			)\
 )
 
 #define BLOCK_TAG(v) BOOST_PP_SEQ_ELEM(0,v)
@@ -88,8 +91,7 @@ BOOST_PP_VARIADIC_TO_SEQ(\
 
 #define DEFINE_OSTR_SWITCH_CASES_helper(r, data, i, elem) \
 	case BLOCK_TAG_FULL_ENUM(elem): \
-		return end ? ::constructsMap.at(lang).at(tag).second : ::constructsMap.at(lang).at(tag).first; \
-		break;
+		return end ? ::constructsMap.at(lang).at(tag).second : ::constructsMap.at(lang).at(tag).first;
 
 #define DEFINE_OSTR_SWITCH_CASES \
 	BOOST_PP_SEQ_FOR_EACH_I(DEFINE_OSTR_SWITCH_CASES_helper,_,BLOCK_TAGS_DATA)

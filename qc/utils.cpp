@@ -1,7 +1,6 @@
 ﻿#include "stdafx.h"
 #include "utils.h"
 #include "cross_utils.h"
-#include "qc_parser_runner.h"
 #include "tag_block_manager.h"
 #include <sstream>
 #include <boost/format.hpp>
@@ -119,6 +118,7 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Set"			,"set" },
 {"Dynamic"		,"dynamic" },
 {"Wide"			,"" },
+{"REM"			,"//" },
 		}
 	},
 		{
@@ -192,17 +192,15 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Set","set" },
 {"Dynamic","auto"},
 { "Wide","L" },
+{"REM","//" },
 		}
 	}
 };
-const std::string_view nonAlnumChars
-{
-	"`~!#$%^&*()-=+[]{}|\\;:'\",./?\n<>"
-};
+const std::string_view nonAlnumChars { "`~!#$%^&*()-=+[]{}|\\;:'\",./?\n<>" };
 
 #undef caref
 
-void racssae( std::string& input , std::string_view search , std::string replace );
+void ReplaceAllSurroundedByNonAlnumChars( std::string& input , std::string_view search , std::string replace );
 
 static const std::unordered_map<std::string , std::string> languageExtensionDict
 {
@@ -221,8 +219,6 @@ static const std::set<char> allOpenBraces { '<','(','[','{' };
 static const std::set<char> allCloseBraces { '>',')',']','}' };
 static const std::set<std::string> supportedLanguages
 {
-	"",
-	"qc",
 	literal_cs,
 	literal_cpp
 };
@@ -538,7 +534,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 			if ( !isTagParsed )
 			{
 				o << to_string( tagVal , toLang ) << '(';
-				racssae( subVal , "In" , ":" );
+				ReplaceAllSurroundedByNonAlnumChars( subVal , "In" , ":" );
 				convertTextToLang( o , subVal , toLang , false , false );
 				o << ")";
 			}
@@ -590,6 +586,28 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		}
 		else goto _default_;
 		break;
+
+	case tags::_Event_:
+	{
+		if ( isCpp )throw throwVal( "Events aren't supported in QC trans-compiled to C++ (17 With Boost)." , eventNotSupported );
+		if ( !isTagParsed )
+		{
+			convStr( subVal , toLang );
+			auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
+			if ( ofIdx == subVal.end( ) )throw throwVal( "The name of the event must come before \"Of\" and the type must come after \"Of\"." , invalidPropertySyntax );
+			o <<
+				" event " <<
+				string( ofIdx + 4 , subVal.end( ) ) <<
+				' ' <<
+				subVal.substr( 0 , ofIdx - subVal.begin( ) );
+		}
+	}
+	break;
+
+	case tags::_Add_:
+	case tags::_Remove_:
+		if ( isCpp )throw throwVal( "Add & Remove aren't supported in QC trans-compiled to C++ (17 With Boost)." , addRemoveNotSupported );
+		goto UUCGSETFDCFTCDFTD;
 
 	default: _default_:
 		{
@@ -645,7 +663,11 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		loop_split(
 			vText ,
 			[ ] ( auto&& i , auto&& iter )
-			{ return *iter == '\n' && !( i == 0 ? false : *( iter - 1 ) == '_' ); } ,
+			{
+				return *iter == '\n' &&
+					!( i <= 2 ? false :
+					( *( iter - 1 ) == '_' && isspace( *( iter - 2 ) ) ) );
+			} ,
 			[ &o , &semicolon , &isCpp , &toLang ] ( string&& subVal )
 			{
 				boost::trim( subVal );
@@ -664,7 +686,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 				if ( isCpp ) o << " = 0";
 				o << semicolon << endl;
 			}
-		);
+			);
 	}
 	else
 	{
@@ -683,16 +705,16 @@ void commonReplacement( std::string & val )
 {
 	using namespace boost::algorithm;
 
-	racssae( val , "LessOrEq" , "<=" );
-	racssae( val , "MoreOrEq" , ">=" );
-	racssae( val , "NotEquals" , "!=" );
-	racssae( val , "Equals" , "==" );
-	racssae( val , "Less" , "<" );
-	racssae( val , "More" , ">" );
-	racssae( val , "LeftShiftSet" , "<<=" );
-	racssae( val , "RightShiftSet" , ">>=" );
-	racssae( val , "LeftShift" , "<<" );
-	racssae( val , "RightShift" , ">>" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "LessOrEq" , "<=" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "MoreOrEq" , ">=" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "NotEquals" , "!=" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "Equals" , "==" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "Less" , "<" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "More" , ">" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "LeftShiftSet" , "<<=" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "RightShiftSet" , ">>=" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "LeftShift" , "<<" );
+	ReplaceAllSurroundedByNonAlnumChars( val , "RightShift" , ">>" );
 }
 
 struct isEqualConsiderSpace
@@ -759,8 +781,8 @@ inline void replaceAllConSpace(
 		::boost::algorithm::const_formatter( Format ) );
 }
 
-//Replace All Consider Space, Start And End
-void racssae(
+//Replace All Surrounded By Non Alphanumeric Characters
+void ReplaceAllSurroundedByNonAlnumChars(
 	std::string& input ,
 	std::string_view search ,
 	std::string replace )
@@ -784,12 +806,13 @@ void convStr( std::string & val , const std::string & toLang , bool processNewLi
 	using namespace boost::algorithm;
 	replaceAngleBrace( val );
 	if ( toLang != literal_cpp )replace_all( val , lcolon_colon , ldot );
-	for ( auto& i : replacements.at( toLang ) ) racssae( val , i.first , std::string( i.second ) );
+	for ( auto& i : replacements.at( toLang ) ) ReplaceAllSurroundedByNonAlnumChars( val , i.first , std::string( i.second ) );
 	commonReplacement( val );
 	if ( processNewLines )
 	{
 		replace_all( val , "\n" , ";\n" );
-		replace_all( val , "_;" , "" );
+		replace_all( val , " _;" , "" );
+		replace_all( val , "\t_;" , "\t" );
 		replace_all( val , " ;" , ";" );
 		replace_all( val , "\t;" , ";" );
 		replace_all( val , "\n;" , "\n" );
@@ -969,7 +992,7 @@ size_t getFirstNewline( const std::string_view & val , size_t off )
 	{
 		if ( pos == 0 ) return pos;
 		auto underscore = val.find_last_of( "_" , pos );
-		if ( pos == ( underscore + 1 ) )pos = val.find_first_of( '\n' , pos + 1 );
+		if ( pos == ( underscore + 1 ) && !isspace( val[ underscore - 1 ] ) )pos = val.find_first_of( '\n' , pos + 1 );
 		else return pos;
 	}
 }
@@ -1007,39 +1030,28 @@ int parseArgs( boost::program_options::variables_map vm )
 		return v;
 	}
 
-	if ( toLang == "" || toLang == "qc" )
+	cout << "Full parsing started" << endl;
+
+	try
 	{
-		try { pcr_file( arg ); }
-		catch ( throwVal& val )
-		{
-			return val.errCode;
-		}
+		++indentLevel;
+		if ( is_regular_file( arg ) )
+			parse_file( arg , toLang , indent );
+		else if ( is_directory( arg ) )
+			traversePath( arg , toLang , indent );
+		else throw throwVal( "Path is neither a (regular) file not a directory" , notFileNorDir );
+		--indentLevel;
+
+		cout << "Full parsing succeeded" << endl;
+
 	}
-	else
+	catch ( const throwVal& val )
 	{
-		cout << "Full parsing started" << endl;
 
-		try
-		{
-			++indentLevel;
-			if ( is_regular_file( arg ) )
-				parse_file( arg , toLang , indent );
-			else if ( is_directory( arg ) )
-				traversePath( arg , toLang , indent );
-			else throw throwVal( "Path is neither a (regular) file not a directory" , notFileNorDir );
-			--indentLevel;
+		--indentLevel;
+		cout << "Full parsing failed" << endl;
 
-			cout << "Full parsing succeeded" << endl;
-
-		}
-		catch ( const throwVal& val )
-		{
-
-			--indentLevel;
-			cout << "Full parsing failed" << endl;
-
-			return val.errCode;
-		}
+		return val.errCode;
 	}
 	return 0;
 }
@@ -1168,7 +1180,4 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang , bool 
 }
 
 inline throwVal::throwVal( const std::string& first , int errCode ) :errCode( errCode )
-{
-	std::cerr <<
-		"Error: " << first << std::endl;
-}
+{ std::cerr << "Error: " << first << std::endl; }
