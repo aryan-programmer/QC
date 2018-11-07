@@ -60,7 +60,7 @@ void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::str
 
 	if ( tagVal != tags::_Native_ && tagVal != tags::_QC_ )
 	{
-		--indentLevel;
+		if ( tagVal != tags::_Comment_ )--indentLevel;
 		o << std::endl << indent << to_string( tagVal , toLang , true );
 		if ( qc.qc.name != tags::_Do_ )o << std::endl;
 	}
@@ -70,6 +70,7 @@ qc_grammar::qc_grammar( ) :qc_grammar::base_type( qc , "qc" )
 {
 	using qi::lit;
 	using qi::lexeme;
+	using qi::no_skip;
 	using qi::on_error;
 	using qi::fail;
 	using ascii::char_;
@@ -77,7 +78,7 @@ qc_grammar::qc_grammar( ) :qc_grammar::base_type( qc , "qc" )
 	using namespace qi::labels;
 	using phx::val;
 
-	text %= lexeme[ +( char_ - '<' ) ];
+	text %= no_skip[ +( char_ - '<' ) ];
 	node %= qc | text;
 
 	start_tag %= '<' >> !lit( '/' ) > ( DEFINE_PARSER ) > '>';

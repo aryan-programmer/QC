@@ -60,7 +60,7 @@ void loop_split( const str_t& text , CheckingFunc&& checkingFunc , AtSplitFunc&&
 
 template<typename str_t , typename OutIter , typename CkeckingFunc>
 inline void split( const str_t& text , OutIter output , CkeckingFunc&& checkingFunc )
-{ loop_split( text , std::forward<CkeckingFunc>( checkingFunc ) , [ &output ] ( str_t&& val ) { *output = val; output++; } ); }
+{ loop_split( text , std::forward<CkeckingFunc>( checkingFunc ) , [ &output ] ( str_t&& val ) { *output = std::move( val ); output++; } ); }
 
 template<typename str_t , typename CkeckingFunc , typename DisableFunc , typename EnableFunc , typename AtSplitFunc>
 void loop_split_with_enable_disable(
@@ -85,20 +85,25 @@ void loop_split_with_enable_disable(
 		auto isFSatisfied = checkingFunc( i , iter );
 		if ( hasToSwitchStart && ( !isFSatisfied ) )
 		{
-			// We have to get a new end & the end is i.
+			// We don't have to get a new start.
 			hasToSwitchStart = false;
+			// Because the start is i
 			start = i;
 		}
 		else if ( hasToSwitchEnd&&isFSatisfied )
 		{
-			// We have to get a new end & the end is i.
+			// We don't have to get a new end.
 			hasToSwitchEnd = false;
+			// Because the end is i
 			end = i;
 		}
 
+		// If there is a new end & a start
 		if ( !hasToSwitchEnd && !hasToSwitchStart )
 		{
+			// We must switch them next
 			hasToSwitchEnd = hasToSwitchStart = true;
+			// But first call the function with the split value
 			asf( str_t( text.data( ) + start , end - start ) );
 		}
 

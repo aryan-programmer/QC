@@ -19,13 +19,13 @@ static constexpr int addRemoveNotSupported = 15;
 static constexpr int invalidPropertySyntax = 16;
 static constexpr int invalidIndexerSyntax = 17;
 
+struct _indent { size_t indentLevel; };
 struct __indent
 {
-	struct _indent { size_t indentLevel; };
 	_indent operator()( size_t indentLevel );
 };
 static __indent indent;
-std::ostream& operator<<( std::ostream& o , __indent::_indent&& v );
+std::ostream& operator<<( std::ostream& o , _indent&& v );
 std::ostream& operator<<( std::ostream& o , __indent );
 
 void parseLang( std::ostream& o , bool& isTagParsed , std::string & text , const tags & tagVal , const std::string & toLang );
@@ -40,18 +40,16 @@ int parseArgs( boost::program_options::variables_map vm );
 
 void traversePath( boost::filesystem::path &arg , std::string &toLang , bool indent );
 
-void parse_file( boost::filesystem::path &filename , std::string &toLang , bool indent );
+void parse_file( boost::filesystem::path &filename, std::string &toLang );
 void parse_file( boost::filesystem::path & filename , std::string &storage , std::string::const_iterator &iter , std::string::const_iterator &end , bool &succeed , qc_grammar &qc , qc_data &ast );
 
 template<typename Iter>forceinline bool isStrQuote( size_t i , Iter iter )
 { return ( *iter == '`' && ( i != 0 ? *( iter - 1 ) != '\\' : true ) ); }
 
-class throwVal
+class qcParsingException: public std::exception
 {
 public:
 	int errCode;
 
-	throwVal( const std::string& first , int errCode );
+	qcParsingException( const std::string& first , int errCode );
 };
-
-void __Print_Stack_Trace__PST__For__ERROR_Handling( );

@@ -62,7 +62,7 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 { tags::_Class_,{"class",closeBrace( )} },
 { tags::_Structure_,{"struct",closeBrace( )} },
 { tags::_Namespace_,{"namespace",closeBrace( )} },
-{ tags::_Interface_,{"interface",closeBrace( ) }},
+{ tags::_Interface_,{"struct",closeBrace( ) }},
 { tags::_Enum_,{"enum class",closeBrace( )}},
 { tags::_Native_,{empty_str( ),empty_str( )} },
 { tags::_NativeCPP_,{empty_str( ),empty_str( )} },
