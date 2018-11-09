@@ -23,6 +23,7 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 	{
 		literal_cs,
 		{
+{"CPPPublic"	,""},
 {"CPPInclude"	,"//"},
 {"AlsoGive"		,"yield return"},
 {"Finalize"		,"yield break"},
@@ -123,6 +124,7 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 		{
 		literal_cpp,
 		{
+{"CPPPublic"	,"public"},
 {"CPPInclude QCCore","#include <QCCore.h>"},
 {"CPPInclude","#include"},
 {"Using Namespace","using namespace"},
@@ -501,7 +503,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		isNative = tagVal == tags::_Native_ || tagVal == tags::_NativeCPP_ || tagVal == tags::_NativeCS_ ,
 		// Should skip inserting open brace
 		isSkip = isNative || isRoot || isComment /* ||extra stuff */ ,
-		// Is the tag a syatement in a case (Case||FTCase||Default||FTDefault)
+		// Is the tag a statement in a switch (Case||FTCase||Default||FTDefault)
 		isCase = false ,
 		// Is the language equal to C++, used to avoid repeated comparisons.
 		isCpp = toLang == literal_cpp ,
@@ -525,6 +527,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 	boost::trim( subVal );
 	// Makes sure that empty lines don't have semicolons inserted.
 	const auto semicolon = ( subVal.length( ) != 0 ? ";" : "" );
+	boost::replace_all( subVal , "_\n" , "\n" );
 
 	// Only if the tag has not been parsed
 	if ( !isTagParsed )
@@ -1119,7 +1122,8 @@ size_t getFirstNewline( const std::string_view & val , size_t off )
 	{
 		if ( pos == 0 ) return pos;
 		auto underscore = val.find_last_of( "_" , pos );
-		if ( pos == ( underscore + 1 ) && !isspace( val[ underscore - 1 ] ) )pos = val.find_first_of( '\n' , pos + 1 );
+		if ( pos == ( underscore + 1 ) && ( underscore >= 1 || isspace( val[ underscore - 1 ] ) ) )
+			pos = val.find_first_of( '\n' , pos + 1 );
 		else return pos;
 	}
 }
