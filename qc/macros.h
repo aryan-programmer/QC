@@ -19,8 +19,8 @@ BOOST_PP_VARIADIC_TO_SEQ(\
 	(Namespace	)((0)			),\
 	(Interface	)((0)			),\
 	(Enum		)((0)			),\
-	(NativeCPP	)((0)			),\
-	(NativeCS	)((0)			),\
+	(CPP		)((0)			),\
+	(CS			)((0)			),\
 	(Native		)((0)			),\
 	(Property	)((0)			),\
 	(Indexer	)((0)			),\

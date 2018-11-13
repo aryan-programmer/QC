@@ -13,18 +13,18 @@
             <Keywords name="Numbers, suffix1"></Keywords>
             <Keywords name="Numbers, suffix2">f d m F D M</Keywords>
             <Keywords name="Numbers, range"></Keywords>
-            <Keywords name="Operators1">- ++ -- ~ ! &amp; * / % + == != ^ | &amp;&amp; || ? = *= /= %= += -= &amp;= ^= |= [ ] ( ) { } , . -&gt; ;</Keywords>
+            <Keywords name="Operators1">- ++ -- ~ ! &amp; * / % + == != ^ | &amp;&amp; || ? = *= /= %= += -= &amp;= ^= |= [ ] ( ) { } , . -&gt; ; ::</Keywords>
             <Keywords name="Operators2">LessOrEq MoreOrEq Equals NotEquals Less More LeftShift LeftShiftSet RightShift RightShiftSet</Keywords>
             <Keywords name="Folders in code1, open">&lt;Blk&gt; &lt;QC&gt; &lt;Class&gt; &lt;Structure&gt; &lt;Namespace&gt; &lt;Interface&gt; &lt;Enum&gt; &lt;NativeCPP&gt; &lt;NativeCS&gt; &lt;Native&gt; &lt;Property&gt; &lt;Indexer&gt; &lt;Unsafe&gt; &lt;Unchecked&gt; &lt;Checked&gt; &lt;Get&gt; &lt;Set&gt; &lt;If&gt; &lt;ElseIf&gt; &lt;Else&gt; &lt;Switch&gt; &lt;FTCase&gt; &lt;Case&gt; &lt;Default&gt; &lt;FTDefault&gt; &lt;Try&gt; &lt;Catch&gt; &lt;Finally&gt; &lt;Do&gt; &lt;Until&gt; &lt;While&gt; &lt;ForEach&gt; &lt;ForEver&gt; &lt;For&gt; &lt;RevFor&gt; &lt;Comment&gt; &lt;Function&gt; &lt;Lock&gt; &lt;Using&gt; &lt;Event&gt; &lt;Add&gt; &lt;Remove&gt;</Keywords>
             <Keywords name="Folders in code1, middle"></Keywords>
-            <Keywords name="Folders in code1, close">&lt;/&gt;</Keywords>
+            <Keywords name="Folders in code1, close">&lt;/&gt; &lt;/Next&gt; &lt;/Prev&gt; &lt;/Loop&gt;</Keywords>
             <Keywords name="Folders in code2, open">#if</Keywords>
             <Keywords name="Folders in code2, middle">#else</Keywords>
             <Keywords name="Folders in code2, close">#endif</Keywords>
             <Keywords name="Folders in comment, open">Region</Keywords>
             <Keywords name="Folders in comment, middle"></Keywords>
             <Keywords name="Folders in comment, close">EndRegion</Keywords>
-            <Keywords name="Keywords1">CPPInclude AlsoGive Finalize Give GiveIn GenOf IterGenOf Gen IterGen Abstract Ascending Asynchronous Await Base Bool Break Byte Case Class Char WChar Checked Constant CPPConst Continue Decimal Default Delegate Double Enum Event Explicit Extern False Float Goto HashCode Implicit In Int Interface Internal Is Long New CPPNew Null Object Operator Out CPPOut Override CPPOverride CSOverride Parameters Private Protected Public ReadOnly Ref CPPRef SByte Sealed Short Single Float Double StackAlloc Static String StringRef WString WStringRef Structure Switch Me Throw True Virtual Nothing Volatile Var CSVar &quot;Using Namespace QCCore&quot; &quot;Using Namespace&quot; Using UShort UInt ULong Global PriMutex Get Set Dynamic Wide To Step Of Gives</Keywords>
+            <Keywords name="Keywords1">Templated CPPInclude AlsoGive Finalize Give GenOf IterGenOf Gen IterGen Abstract Await Base Bool Break Byte Case Class Char WChar Constant CPPConst Continue Default Delegate Event Explicit Extern False Goto HashCode Implicit In Int Interface Internal Is Long New CPPNew NullPtrType NullPtr Null Object Operator Out CPPOut Override CPPOverride Parameters Private Protected Public ReadOnly Ref CPPRef SByte Sealed Short Single Float Double StackAlloc Static String StringRef WString WStringRef Structure Me Throw True Virtual Nothing Volatile Auto CSVar Using UShort UInt ULong Global PriMutex Dynamic Wide REM TypeOf Get Set CSLine CPPLine Gives To Step Of Variable Template Inherits</Keywords>
             <Keywords name="Keywords2">@ m_</Keywords>
             <Keywords name="Keywords3">System Collections Generic</Keywords>
             <Keywords name="Keywords4"></Keywords>
@@ -37,7 +37,7 @@
         <Styles>
             <WordsStyle name="DEFAULT" fgColor="000000" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="COMMENTS" fgColor="008000" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="2050" />
-            <WordsStyle name="LINE COMMENTS" fgColor="000000" bgColor="FFFFFF" fontName="" fontStyle="0" nesting="0" />
+            <WordsStyle name="LINE COMMENTS" fgColor="008000" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="NUMBERS" fgColor="3EC155" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="KEYWORDS1" fgColor="0080FF" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="KEYWORDS2" fgColor="CC0066" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />

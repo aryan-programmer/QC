@@ -9,33 +9,32 @@
 #include <boost/scope_exit.hpp>
 
 #define caref constexpr auto &
-caref l_Gives_ = " Gives ";
-caref l_To_ = " To ";
 caref lTo = "To";
-caref l_Step_ = " Step ";
 caref lStep = "Step";
-caref l_Of_ = " Of ";
 caref lcolon_colon = "::";
 caref ldot = ".";
+caref l_Gives_ = " Gives ";
+caref l_To_ = " To ";
+caref l_Step_ = " Step ";
+caref l_Of_ = " Of ";
 caref lVariable_ = "Variable ";
+caref l_Template_ = " Template ";
+caref l_Inherits_ = " Inherits ";
 const std::unordered_map<std::string_view , std::unordered_map<std::string_view , std::string_view>> replacements
 {
 	{
 		literal_cs,
 		{
-{"CPPPublic"	,""},
+{"Templated"	,"//"},
 {"CPPInclude"	,"//"},
 {"AlsoGive"		,"yield return"},
 {"Finalize"		,"yield break"},
 {"Give"			,"return"},
-{"GiveIn"		,"return"},
 {"GenOf"		,"System.Collections.Generic.IEnumerable"},
 {"IterGenOf"	,"System.Collections.Generic.IEnumerator"},
 {"Gen"			,"System.Collections.IEnumerable"},
 {"IterGen"		,"System.Collections.IEnumerator"},
 {"Abstract"		,"abstract"},
-{"Ascending"	,"ascending"},
-{"Asynchronous"	,"async"},
 {"Await"		,"await"},
 {"Base"			,"base"},
 {"Bool"			,"bool"},
@@ -45,20 +44,15 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Class"		,"class"},
 {"Char"			,"char"},
 {"WChar"		,"char"},
-{"Checked"		,"checked"},
 {"Constant"		,"const"},
 {"CPPConst"		,""},
 {"Continue"		,"continue"},
-{"Decimal"		,"decimal"},
 {"Default"		,"default"},
 {"Delegate"		,"delegate"},
-{"Double"		,"double"},
-{"Enum"			,"enum"},
 {"Event"		,"event"},
 {"Explicit"		,"explicit"},
 {"Extern"		,"extern"},
 {"False"		,"false"},
-{"Float"		,"float"},
 {"Goto"			,"goto"},
 {"HashCode"		,"int"},
 {"Implicit"		,"implicit"},
@@ -70,6 +64,8 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Long"			,"long"},
 {"New"			,"new"},
 {"CPPNew"		,"new"},
+//NullPtrType
+//NullPtr
 {"Null"			,"null"},
 {"Object"		,"object"},
 {"Operator"		,"operator"},
@@ -77,7 +73,6 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"CPPOut"		,""},
 {"Override"		,"override"},
 {"CPPOverride"	,""},
-{"CSOverride"	,"override"},
 {"Parameters"	,"params"},
 {"Private"		,"private"},
 {"Protected"	,"protected"},
@@ -98,7 +93,6 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"WString"		,"string"},
 {"WStringRef"	,"string"},
 {"Structure"	,"struct"},
-{"Switch"		,"switch"},
 {"Me"			,"this"},
 {"Throw"		,"throw"},
 {"True"			,"true"},
@@ -119,12 +113,16 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Wide"			,"" },
 {"REM"			,"//" },
 {"TypeOf"		,"typeof" },
+{"Get"			,"get" },
+{"Set"			,"set" },
+{"CSLine"		,"" },
+{"CPPLine"		,"//" },
 		}
 	},
 		{
 		literal_cpp,
 		{
-{"CPPPublic"	,"public"},
+{"Templated"	,"template<typename... Args>"},
 {"CPPInclude QCCore","#include <QCCore.h>"},
 {"CPPInclude","#include"},
 {"Using Namespace","using namespace"},
@@ -135,7 +133,6 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"AlsoGive","co_yield"},
 {"Finalize","return"},
 {"Give","return"},
-{"GiveIn","return"},
 {"Gen","std::experimental::generator<Object>"},
 {"GenOf","std::experimental::generator"},
 {"Await","co_await"},
@@ -147,28 +144,25 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"CPPConst","const"},
 {"Constant","constexpr"},
 {"Continue","continue"},
-{"Decimal","long long"},
 {"Default","default"},
 {"Delegate","[&]"},
-{"Double","double"},
-{"Enum","enum"},
 {"Event","event"},
 {"Explicit","explicit"},
 {"Extern","extern"},
 {"False","false"},
-{"Float","float"},
 {"Goto","goto"},
 {"Implicit",""},
 {"Interface","interface"},
 {"CPPNew","new"},
 {"New",""},
+{"NullPtrType","std::nullptr_t"},
+{"NullPtr","nullptr"},
 {"Null","nullptr"},
 {"Operator","operator"},
 {"Out",""},
 {"CPPOut","&"},
 {"Override",""},
 {"CPPOverride","override"},
-{"CSOverride",""},
 {"Private","private:"},
 {"Protected","protected:"},
 {"Public","public:"},
@@ -179,7 +173,6 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"StackAlloc",""},
 {"Static","static"},
 {"Structure","struct"},
-{"Switch","switch"},
 {"Throw","throw"},
 {"True","true"},
 {"Virtual","virtual"},
@@ -192,6 +185,8 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Dynamic","auto"},
 { "Wide","L" },
 {"REM","//" },
+{"CPPLine","" },
+{"CSLine","//" },
 		}
 	}
 };
@@ -216,6 +211,21 @@ static const std::set<char> allOpenBraces { '<','(','[','{' };
 static const std::set<char> allCloseBraces { '>',')',']','}' };
 static const std::set<std::string> supportedLanguages { literal_cs,literal_cpp };
 
+auto isNewLine =
+[ ] ( auto&& i , auto&& iter )
+{
+	// If the char is a new line
+	return *iter == '\n' &&
+		// and if this is not the 2nd char i.e. we cannot access the previous 2 chars then we if statement gives true
+		( i <= 2 ? true :
+		  // But if we can access the previous 2 chars 
+		  // then we return false 
+		  // if the previous char is an underscore 
+			// and the char before is a space.
+		  !( *( iter - 1 ) == '_' && isspace( *( iter - 2 ) ) ) );
+};
+
+void ReplaceNewLines( std::string &subVal );
 
 auto __indent::operator()( size_t indentLevel )-> _indent { return _indent { indentLevel }; }
 
@@ -233,27 +243,39 @@ std::ostream& operator<<( std::ostream& o , __indent )
 void parse_lang_write_property( std::string &subVal , const std::string & toLang , std::ostream & o )
 {
 	std::stringstream strm;
-	convertTextToLang( strm , subVal , toLang , false , false );
+	convertTextToLang( strm , subVal , toLang , false , false , false );
 	subVal = strm.str( );
 	auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
 	if ( ofIdx == subVal.end( ) )throw qcParsingException( "The name of the property must come before \"Of\" and the type must come after \"Of\"." , invalidPropertySyntax );
-	o <<
-		std::string( ofIdx + 4 , subVal.end( ) ) <<
-		' ' <<
-		subVal.substr( 0 , ofIdx - subVal.begin( ) );
+	// Then the get the return type
+	auto retVal = std::string( ofIdx + 4 , subVal.end( ) );
+	// Convert and write it
+	convertTextToLang( o , retVal , toLang , false , false );
+	// a space
+	o << ' ';
+	// Get the function signature
+	auto funcSig = std::string( subVal.substr( 0 , ofIdx - subVal.begin( ) ) );
+	// Convert and write it
+	convertTextToLang( o , funcSig , toLang , false , false );
 }
 
 void parse_lang_write_indexer( std::string &subVal , const std::string & toLang , std::ostream & o )
 {
 	std::stringstream strm;
-	convertTextToLang( strm , subVal , toLang , false , false );
+	convertTextToLang( strm , subVal , toLang , false , false , false );
 	subVal = strm.str( );
 	auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
-	if ( ofIdx == subVal.end( ) )throw qcParsingException( "The argument list of the indexer must come before \"Of\" and the type must come after \"Of\"." , invalidIndexerSyntax );
-	o <<
-		std::string( ofIdx + 4 , subVal.end( ) ) <<
-		" this" <<
-		subVal.substr( 0 , ofIdx - subVal.begin( ) );
+	if ( ofIdx == subVal.end( ) )throw qcParsingException( "The name of the property must come before \"Of\" and the type must come after \"Of\"." , invalidPropertySyntax );
+	// Then the get the return type
+	auto retVal = std::string( ofIdx + 4 , subVal.end( ) );
+	// Convert and write it
+	convertTextToLang( o , retVal , toLang , false , false );
+	// a space
+	o << " this";
+	// Get the function signature
+	auto funcSig = std::string( subVal.substr( 0 , ofIdx - subVal.begin( ) ) );
+	// Convert and write it
+	convertTextToLang( o , funcSig , toLang , false , false );
 }
 
 void parse_lang_write_for_loop( std::string &subVal , const std::string & toLang , const char * errorDesc , std::ostream & o , const char * whenStepFormat , const char * whenNoStepFormat )
@@ -268,7 +290,7 @@ void parse_lang_write_for_loop( std::string &subVal , const std::string & toLang
 	// The stream for retrieval
 	std::stringstream strm;
 	// convert the string and write to the stream
-	convertTextToLang( strm , subVal , toLang , false , false );
+	convertTextToLang( strm , subVal , toLang , false , false , false );
 	// retrieve the string
 	subVal = strm.str( );
 
@@ -276,12 +298,13 @@ void parse_lang_write_for_loop( std::string &subVal , const std::string & toLang
 	auto subValStart = subVal.begin( );
 	// The end iter for comparison and stopping
 	auto subValEnd = subVal.end( );
+	ReplaceNewLines( subVal );
 
 	// Whether to introduce a new variable
 	bool newVar = false;
 	// The vector of parsings. 
 	std::vector<std::string> vec;
-	auto success = phrase_parse(
+	if ( !phrase_parse(
 		// Start
 		subValStart ,
 		// end
@@ -296,8 +319,7 @@ void parse_lang_write_for_loop( std::string &subVal , const std::string & toLang
 		lexeme[ +( char_ - l_Step_ ) ] >>
 		// The optional step
 		-( lStep >> lexeme[ +char_ ] ) ,
-		space , vec );
-	if ( !success || subValStart != subValEnd )
+		space , vec ) || subValStart != subValEnd )
 		// Parsing failed due to invalid syntax
 		throw qcParsingException( errorDesc , invalidLoopSyntax );
 	// There is a step value
@@ -369,23 +391,111 @@ void parse_lang_write_using_when_cpp( bool &isSkip , std::ostream & o , std::str
 	o << semicolon << endl;
 }
 
+void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::string & subVal , const std::string & toLang , std::ostream & o , std::string &retVal , std::string &funcSig )
+{
+	using namespace std;
+	using namespace boost;
+
+	// The template parameters
+	auto templateParameter = string( templateIdx + 10 , subVal.end( ) );
+	if ( toLang == literal_cpp )
+		// If the language is C++ then we write the starting template<...> parameters.
+		o << "template<typename " << replace_all_copy( templateParameter , "," , ", typename " ) << ">\n" << indent;
+
+	// Then we write the return type
+	convertTextToLang( o , retVal , toLang , false , false );
+	// a space
+	o << ' ';
+	// If the language is C++ then we just write the function signature as is.
+	if ( toLang == literal_cpp )
+		convertTextToLang( o , funcSig , toLang , false , false );
+	else
+	{
+		/// Otherwise we find,
+		auto funcNameEnd = funcSig.find_first_of( '(' );
+		// The function's name
+		auto funcName = funcSig.substr( 0 , funcNameEnd - 1 );
+		/// and
+		// The function's argument list
+		auto funcParams = funcSig.substr( funcNameEnd );
+		// Convert and write the function's name,
+		convertTextToLang( o , funcName , toLang , false , false );
+		// The generic type parameter list
+		o << "<";
+		convertTextToLang( o , templateParameter , toLang , false , false );
+		o << ">";
+		// and the function's argument list.
+		convertTextToLang( o , funcParams , toLang , false , false );
+	}
+}
+
+void parseLang_writeFunction_whenGive_t( bool isTemplated , std::string::iterator &givesIdx , std::string & subVal , std::ostream & o , const std::string & toLang , std::string::iterator &templateIdx )
+{
+	using namespace std;
+
+	if ( !isTemplated )
+	{
+		// Then the get the return type
+		auto retVal = string( givesIdx + 7 , subVal.end( ) );
+		// Convert and write it
+		convertTextToLang( o , retVal , toLang , false , false );
+		// a space
+		o << ' ';
+		// Get the function signature
+		auto funcSig = subVal.substr( 0 , givesIdx - subVal.begin( ) );
+		// Convert and write it
+		convertTextToLang( o , funcSig , toLang , false , false );
+	}
+	else
+	{
+		// The return type
+		auto retVal = string( givesIdx + 7 , templateIdx );
+		// The function signature
+		auto funcSig = subVal.substr( 0 , givesIdx - subVal.begin( ) );
+		parseLang_writeFunctionTemplate( templateIdx , subVal , toLang , o , retVal , funcSig );
+	}
+}
+
 void parse_lang_write_function( std::string &subVal , const std::string & toLang , std::ostream & o )
 {
 	using namespace boost::algorithm;
 	using namespace std;
 
+	// Convert the string
 	std::stringstream strm;
-	convertTextToLang( strm , subVal , toLang , false , false );
+	convertTextToLang( strm , subVal , toLang , false , false , false );
 	subVal = strm.str( );
+
+	// Is the subVal a template
+	bool isTemplated = boost::contains( subVal , l_Template_ );
+	std::string::iterator templateIdx;
+	// If yes then we set the template iterator of the first occurrence of " Template "
+	if ( isTemplated ) templateIdx = boost::find_first( subVal , l_Template_ ).begin( );
+
+	// Is a return type is specified
 	if ( boost::contains( subVal , l_Gives_ ) )
 	{
+		// The iterator to the first occurrence of " Gives "
 		auto givesIdx = boost::find_first( subVal , l_Gives_ ).begin( );
-		o <<
-			string( givesIdx + 7 , subVal.end( ) ) <<
-			' ' <<
-			subVal.substr( 0 , givesIdx - subVal.begin( ) );
+		parseLang_writeFunction_whenGive_t( isTemplated , givesIdx , subVal , o , toLang , templateIdx );
 	}
-	else o << "void " << subVal;
+	else
+	{
+		// If the function is not a template
+		if ( !isTemplated )
+		{
+			// Then we write the return type
+			o << "void ";
+			convertTextToLang( o , subVal , toLang , false , false );
+		}
+		else
+		{
+			// The return type
+			string retVal = "void";
+			string funcSig = subVal.substr( 0 , templateIdx - subVal.begin( ) );
+			parseLang_writeFunctionTemplate( templateIdx , subVal , toLang , o , retVal , funcSig );
+		}
+	}
 }
 
 void parse_lang_parse_interface_text( std::string & vText , const std::string & toLang , std::ostream & o , const char * semicolon , bool &isCpp )
@@ -394,7 +504,7 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 	// The stream for retrieval
 	std::stringstream strm;
 	// We convert the string and write to the stream
-	convertTextToLang( strm , vText , toLang , false , false );
+	convertTextToLang( strm , vText , toLang , false , false , false );
 	// We retrieve the string
 	vText = strm.str( );
 	// We trim the string
@@ -406,23 +516,13 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 		// The text
 		vText ,
 		// The splitting function
-		[ ]( auto&& i , auto&& iter )
-		{
-			// If the char is a new line
-			return *iter == '\n' &&
-				// and if this is not the 2nd char i.e. we cannot access the previous 2 chars then we if statement gives true
-				( i <= 2 ? true :
-				  // But if we can access the previous 2 chars 
-				  // then we return false 
-				  // if the previous char is an underscore 
-					// and the char before is a space.
-				  !( *( iter - 1 ) == '_' && isspace( *( iter - 2 ) ) ) );
-		} ,
+		isNewLine ,
 		// The looping function
-			[ &o , &semicolon , &isCpp , &toLang ]( string&& subVal )
+		[ &o , &semicolon , &isCpp , &toLang ]( string&& subVal )
 		{
 			// We trim the string
 			boost::trim( subVal );
+			if ( subVal == "" )return;
 			// We add an indent.
 			o << indent;
 			// If the language is C++ then we insert "virtual"
@@ -443,7 +543,7 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 				// Convert and write it
 				convertTextToLang( o , funcSig , toLang , false , false );
 			}
-			// Otherwise the return type is "void" an the function signature is the subVal
+			// Otherwise the return type is "void" and the function signature is the subVal
 			else
 			{
 				o << "void ";
@@ -454,7 +554,7 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 			// We need the semicolon
 			o << semicolon << endl;
 		}
-		);
+	);
 }
 
 // Post Modifiable Tag Enclosed With Brace
@@ -471,22 +571,131 @@ void parse_lang_write_event( std::string &subVal , const std::string & toLang , 
 	using namespace std;
 
 	std::stringstream strm;
-	convertTextToLang( strm , subVal , toLang , false , false );
+	convertTextToLang( strm , subVal , toLang , false , false , false );
 	subVal = strm.str( );
 	auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
 	if ( ofIdx == subVal.end( ) )throw qcParsingException( "The name of the event must come before \"Of\" and the type must come after \"Of\"." , invalidPropertySyntax );
-	o <<
-		" event " <<
-		string( ofIdx + 4 , subVal.end( ) ) <<
-		' ' <<
-		subVal.substr( 0 , ofIdx - subVal.begin( ) );
+	o << " event ";
+	// Then the get the return type
+	auto retVal = std::string( ofIdx + 4 , subVal.end( ) );
+	// Convert and write it
+	convertTextToLang( o , retVal , toLang , false , false );
+	// a space
+	o << ' ';
+	// Get the function signature
+	auto funcSig = std::string( subVal.substr( 0 , ofIdx - subVal.begin( ) ) );
+	// Convert and write it
+	convertTextToLang( o , funcSig , toLang , false , false );
+}
+
+void parseLang_writeCSNEI_Template( std::string & subVal , const std::string & toLang , std::ostream & o , const tags & tagVal )
+{
+	using namespace std;
+
+	// The iterator to the first occurrence of " Template "
+	auto templateIdx = boost::find_first( subVal , l_Template_ ).begin( );
+	// The template parameters
+	auto templateParameters = string( templateIdx + 10 , subVal.end( ) );
+	// If the language is C++
+	if ( toLang == literal_cpp )
+		// We insert the appropriate starting template<...> parameter list in C++
+		o << "template<typename " << boost::replace_all_copy( templateParameters , "," , ", typename" ) << ">\n" << indent;
+	// Write the tag's string repr.
+	o << to_string( tagVal , toLang ) << ' ';
+	// The new subVal containing all the information about the Class/Structure/Interface's DECLARATION.
+	auto newSubVal = subVal.substr( 0 , templateIdx - subVal.begin( ) );
+	// If the Class/Structure/Interface inherits some types.
+	if ( boost::contains( newSubVal , l_Inherits_ ) )
+	{
+		// The iterator to the first occurance of " Inherits "
+		auto inheritsIdx = boost::find_first( newSubVal , l_Inherits_ ).begin( );
+		// The name of the Class/Structure/Interface which we convert and write.
+		auto name = newSubVal.substr( 0 , inheritsIdx - newSubVal.begin( ) );
+		convertTextToLang( o , name , toLang , false , false );
+		// The template specialization in C++ and the generic type parameter list declaration in C#.
+		o << "<";
+		convertTextToLang( o , templateParameters , toLang , false , false );
+		o << ">";
+		// The string containing all the types that the Class/Structure/Interface inherit
+		auto inheritance = newSubVal.substr( ( inheritsIdx - newSubVal.begin( ) ) + 10 );
+		// The inherits specifier
+		o << ": ";
+		if ( toLang == literal_cpp )
+		{
+			// The default and mandatory inheritance access specifier is Public.
+			boost::replace_all( inheritance , "," , ", Public " );
+			// The inheritance specifier access specifier is Public for the first type
+			o << "public ";
+		}
+		// We print the inheritance list.
+		convertTextToLang( o , inheritance , toLang , false , false );
+	}
+	// If the class inherits no types
+	else
+	{
+		// Write the class' name
+		convertTextToLang( o , newSubVal , toLang , false , false );
+		// The template specialization in C++ and the generic type parameter list declaration in C#.
+		o << "<";
+		convertTextToLang( o , templateParameters , toLang , false , false );
+		o << ">";
+	}
 }
 
 // class structure namespace enum interface
 void parse_lang_write_CSNEI( std::string &subVal , const std::string & toLang , std::ostream & o , const tags & tagVal )
 {
-	convStr( subVal , toLang , false );
-	o << to_string( tagVal , toLang ) << ' ' << subVal;
+	using namespace std;
+
+	// If the CSNEI is templated
+	if ( boost::contains( subVal , l_Template_ ) )
+	{
+		// If the tag is a namespace or an enum we throw the corresponding errors.
+		if ( tagVal == tags::_Namespace_ )
+			throw qcParsingException( "Namespaces can't have templates." , templateOnNamespace );
+		if ( tagVal == tags::_Enum_ )
+			throw qcParsingException( "Enumerations can't have templates." , templateOnEnumeration );
+		parseLang_writeCSNEI_Template( subVal , toLang , o , tagVal );
+	}
+	else
+	{
+		// Write the tag's string repr.
+		o << to_string( tagVal , toLang ) << ' ';
+		// If the Class/Structure/Interface inherits some types.
+		if ( boost::contains( subVal , l_Inherits_ ) )
+		{
+			// If the tag is a namespace or an enum we throw the corresponding errors.
+			if ( tagVal == tags::_Namespace_ )
+				throw qcParsingException( "Namespaces can't have inheritance" , inheritanceOnNamespace );
+			if ( tagVal == tags::_Enum_ )
+				throw qcParsingException( "Enumerations can't have inheritance" , inheritanceOnEnumeration );
+			// The iterator to the first occurance of " Inherits "
+			auto inheritsIdx = boost::find_first( subVal , l_Inherits_ ).begin( );
+			// The name of the Class/Structure/Interface which we convert and write.
+			auto name = subVal.substr( 0 , inheritsIdx - subVal.begin( ) );
+			convertTextToLang( o , name , toLang , false , false );
+			// The string containing all the types that the Class/Structure/Interface inherit
+			auto inheritance = subVal.substr( ( inheritsIdx - subVal.begin( ) ) + 10 );
+			// The inherits specifier
+			o << ": ";
+			if ( toLang == literal_cpp )
+			{
+				// The default and mandatory inheritance access specifier is Public.
+				boost::replace_all( inheritance , "," , ", Public " );
+				// The inheritance specifier access specifier is Public for the first type
+				o << "public ";
+			}
+			// We print the inheritance list.
+			convertTextToLang( o , inheritance , toLang , false , false );
+		}
+		// If the class inherits no types then we just have the name of the type
+		else convertTextToLang( o , subVal , toLang , false , false );
+	}
+}
+
+void ReplaceNewLines( std::string &subVal )
+{
+	boost::replace_all( subVal , " _\n" , " \n" );
 }
 
 void parseLang( std::ostream& o , bool& isTagParsed ,
@@ -500,7 +709,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		// Is the tag a root (QC) tag
 		isRoot = tagVal == tags::_QC_ ,
 		// Should the tag's data be inserted as is
-		isNative = tagVal == tags::_Native_ || tagVal == tags::_NativeCPP_ || tagVal == tags::_NativeCS_ ,
+		isNative = tagVal == tags::_Native_ || tagVal == tags::_CPP_ || tagVal == tags::_CS_ ,
 		// Should skip inserting open brace
 		isSkip = isNative || isRoot || isComment /* ||extra stuff */ ,
 		// Is the tag a statement in a switch (Case||FTCase||Default||FTDefault)
@@ -527,7 +736,8 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 	boost::trim( subVal );
 	// Makes sure that empty lines don't have semicolons inserted.
 	const auto semicolon = ( subVal.length( ) != 0 ? ";" : "" );
-	boost::replace_all( subVal , "_\n" , "\n" );
+	ReplaceNewLines( subVal );
+	idx = subVal.length( );
 
 	// Only if the tag has not been parsed
 	if ( !isTagParsed )
@@ -549,7 +759,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 			break;
 
 			// NativeCPP, NativeCS & Native
-		case tags::_NativeCPP_: case tags::_NativeCS_: case tags::_Native_: break;
+		case tags::_CPP_: case tags::_CS_: case tags::_Native_: break;
 
 			// Property
 		case tags::_Property_:
@@ -717,14 +927,14 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 	else if ( isNative )
 	{
 		// If the tag's direct text are CPP only
-		if ( tagVal == tags::_NativeCPP_ )
+		if ( tagVal == tags::_CPP_ )
 		{
 			// If the language is C++ then we write the text
 			if ( isCpp )goto final_;
 			// Else we do not write the elements
 		}
 		// If the tag's direct text are CS only
-		if ( tagVal == tags::_NativeCS_ )
+		if ( tagVal == tags::_CS_ )
 		{
 			// If the language is C# then we write the text
 			if ( isCs )goto final_;
@@ -735,6 +945,11 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		{
 		final_:
 			// Then we write the text as is.
+			commonReplacement( text );
+			boost::replace_all( text , "[[" , "<" );
+			boost::replace_all( text , "]]" , ">" );
+			boost::replace_all( text , "[|" , "<" );
+			boost::replace_all( text , "|]" , ">" );
 			o << text << endl;
 		}
 	}
@@ -751,7 +966,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		auto _text = wasTagParsed ? "" : text.substr( idx );
 		auto& vText = wasTagParsed ? text : _text;
 		// We parse the interface text
-		parse_lang_parse_interface_text( vText , toLang , o , semicolon , isCpp );
+		parse_lang_parse_interface_text( vText , toLang , o , ";" , isCpp );
 	}
 	else
 	{
@@ -937,7 +1152,41 @@ void convStr( std::string & val , const std::string & toLang , bool processNewLi
 {
 	using namespace boost::algorithm;
 	replaceAngleBrace( val );
-	if ( toLang != literal_cpp )replace_all( val , lcolon_colon , ldot );
+	// If the language is not C++
+	if ( toLang != literal_cpp )
+	{
+		// Replace all "::" with "."
+		replace_all( val , lcolon_colon , ldot );
+		// But we have to revert "Global." to "Global::"
+		std::string search = " Global." , replace = " Global::";
+		// So we replace all " Global." with " Global::"
+		boost::algorithm::find_format_all(
+			val ,
+			::boost::algorithm::first_finder( search , isEqualConsiderSpace( ) ) ,
+			::boost::algorithm::const_formatter( replace ) );
+		// Then we loop through all the non-alpha-numeric characters
+		for ( auto& i : nonAlnumChars )
+		{
+			// Set the start of the search and replace to the corresponding non-alpha-numeric character.
+			search[ 0 ] = replace[ 0 ] = i;
+			// Search and replace
+			boost::algorithm::find_format_all(
+				val ,
+				::boost::algorithm::first_finder( search , isEqualConsiderSpace( ) ) ,
+				::boost::algorithm::const_formatter( replace ) );
+		}
+		// Erase the start spaces
+		search.erase( search.begin( ) );
+		replace.erase( replace.begin( ) );
+		// If the value starts with "Global."
+		if ( boost::algorithm::starts_with( val , search ) )
+		{
+			// Erase the starting "Global."
+			val.erase( val.begin( ) , val.begin( ) + search.size( ) );
+			// And append at the start "Global::"
+			val.insert( 0 , replace );
+		}
+	}
 	for ( auto& i : replacements.at( toLang ) )
 		ReplaceAllSurroundedByNonAlnumChars( val , std::string( i.first ) , std::string( i.second ) );
 	commonReplacement( val );
@@ -950,7 +1199,8 @@ void convStr( std::string & val , const std::string & toLang , bool processNewLi
 		replace_all( val , "\t;" , ";" );
 		replace_all( val , "\n;" , "\n" );
 	}
-	if ( val[ 0 ] == ';' && ( applyException ? ( val[ 1 ] != '\n' ) : true ) ) val = val.substr( 1 );
+	if ( val[ 0 ] == ';' && ( applyException ? ( val[ 1 ] != '\n' ) : true ) )
+		val = val.substr( 1 );
 }
 
 void replaceAngleBrace( std::string & val )
@@ -1060,7 +1310,7 @@ std::string WriteDoLoop( std::string & val , std::ostream & o , const std::strin
 	return val.substr( loopCondEndIdx );
 }
 
-void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang , bool doStartIndent , bool processNewLines )
+void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang , bool doStartIndent , bool processNewLines , bool remCont )
 {
 	using namespace boost::algorithm;
 
@@ -1078,7 +1328,7 @@ void convertTextToLang( std::ostream& o , std::string & text , const std::string
 		text ,
 		[ ] ( auto&& idx , auto&& iter ) { return isStrQuote( idx , iter ); } ,
 		[
-			&applyNot , &idx , &toLang , &processNewLines , &isStr , &o , &doStartIndent , &start
+			&applyNot , &idx , &toLang , &processNewLines , &isStr , &o , &doStartIndent , &start , &remCont
 		] ( std::string&& val )
 		{
 			bool isEven = applyNot ? ( idx % 2 ) != 0 : ( idx % 2 ) == 0;
@@ -1087,10 +1337,10 @@ void convertTextToLang( std::ostream& o , std::string & text , const std::string
 				replaceAngleBrace( val );
 				convStr( val , toLang , processNewLines , isStr );
 				loop_split(
-					val ,
-					[ ] ( auto&& idx , auto&& iter ) { return *iter == '\n'; } ,
-					[ &o , &doStartIndent , &start , &idx ] ( std::string&& val )
+					val , isNewLine ,
+					[ &o , &doStartIndent , &start , &idx , &processNewLines , &remCont ] ( std::string&& val )
 					{
+						if ( remCont ) ReplaceNewLines( val );
 						trim( val );
 						if ( val.size( ) == 0 )return;
 						if ( !start )o << std::endl;
@@ -1237,10 +1487,13 @@ void parse_file(
 	in.seekg( 0 , ios::end );
 	storage.reserve( in.tellg( ) );
 	in.seekg( 0 , ios::beg );
-	copy(
-		istream_iterator<char>( in ) ,
-		istream_iterator<char>( ) ,
-		back_inserter( storage ) );
+
+	auto inStart = istream_iterator<char>( in ) , inEnd = istream_iterator<char>( );
+	for ( ; inStart != inEnd; ++inStart )
+	{
+		auto val = *inStart;
+		if ( val != '\r' ) storage.push_back( val );
+	}
 
 	using boost::spirit::ascii::space;
 	iter = storage.begin( );
@@ -1302,4 +1555,4 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang )
 }
 
 inline qcParsingException::qcParsingException( const std::string& first , int errCode ) :errCode( errCode )
-{ std::cerr << "Error: " << first << std::endl; }
+{ std::cerr << "Error: " << first << std::endl << "STACKTRACE:" << std::endl << boost::stacktrace::stacktrace( ) << std::endl; }

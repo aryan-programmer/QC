@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "tag_block_manager.h"
-#include <mutex>
 
 const char* empty_str( ) { static const char* val = ""; return val; }
 const char* closeBrace( ) { static const char* val = "}"; return val; }
+const char* closeBraceThenSemicolon( ) { static const char* val = "};"; return val; }
 
 std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string_view , std::string_view>>> constructsMap
 {
@@ -18,8 +18,8 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 { tags::_Interface_,{"interface",closeBrace( ) }},
 { tags::_Enum_,{"enum",closeBrace( )}},
 { tags::_Native_,{empty_str( ),empty_str( )} },
-{ tags::_NativeCS_,{empty_str( ),empty_str( )} },
-{ tags::_NativeCPP_,{"/*","*/"} },
+{ tags::_CS_,{empty_str( ),empty_str( )} },
+{ tags::_CPP_,{"/*","*/"} },
 { tags::_Property_,{empty_str( ),closeBrace( )} },
 { tags::_Indexer_,{empty_str( ),closeBrace( )} },
 { tags::_Unsafe_,{"unsafe",closeBrace( )} },
@@ -59,14 +59,14 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 		{
 { tags::_Blk_,{empty_str( ),closeBrace( )}},
 { tags::_QC_,{empty_str( ),empty_str( )}},
-{ tags::_Class_,{"class",closeBrace( )} },
-{ tags::_Structure_,{"struct",closeBrace( )} },
+{ tags::_Class_,{"class",closeBraceThenSemicolon( )} },
+{ tags::_Structure_,{"struct",closeBraceThenSemicolon( )} },
 { tags::_Namespace_,{"namespace",closeBrace( )} },
-{ tags::_Interface_,{"struct",closeBrace( ) }},
-{ tags::_Enum_,{"enum class",closeBrace( )}},
+{ tags::_Interface_,{"struct",closeBraceThenSemicolon( ) }},
+{ tags::_Enum_,{"enum class",closeBraceThenSemicolon( )}},
 { tags::_Native_,{empty_str( ),empty_str( )} },
-{ tags::_NativeCPP_,{empty_str( ),empty_str( )} },
-{ tags::_NativeCS_,{"/*","*/"} },
+{ tags::_CPP_,{empty_str( ),empty_str( )} },
+{ tags::_CS_,{"/*","*/"} },
 { tags::_Unsafe_,{empty_str( ),closeBrace( )} },
 { tags::_Unchecked_,{empty_str( ),closeBrace( )} },
 { tags::_Checked_,{empty_str( ),closeBrace( )} },

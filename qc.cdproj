@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <NDepend IsCProject="false" IsPhysical="false" AppName="qc" Platform="DotNet" FileWrittenByProductVersion="2018.2.0.89">
   <OutputDir KeepXmlFiles="False">E:\C++ Projects\Quick C\qc\CppDependOut</OutputDir>
   <Projects>
@@ -79,7 +79,8 @@
       <Major2Critical_SeverityThreshold>72000000000</Major2Critical_SeverityThreshold>
       <Critical2Blocker_SeverityThreshold>360000000000</Critical2Blocker_SeverityThreshold>
     </DebtSettings>
-  </ProjectDebtSettings><Queries>
+  </ProjectDebtSettings>
+  <Queries>
     <Group Name="Quality Gates" Active="True" ShownInReport="True">
       <Query Active="True" DisplayList="True" DisplayStat="True" DisplaySelectionView="False" IsCriticalRule="False"><![CDATA[// <Name>Quality Gates Evolution</Name>
 from qg in QualityGates
@@ -606,12 +607,12 @@ methodsAssigningFields ,
 // varies linearly from 1 hour for a type with 15 fields,
 // to up to 10 hours for a type with 200 or more fields. 
 //</HowToFix>]]></Query>
-      <Query Active="True" DisplayList="True" DisplayStat="False" DisplaySelectionView="False" IsCriticalRule="True"><![CDATA[// <Name>Avoid methods too big, too complex</Name>
+      <Query Active="True" DisplayList="True" DisplayStat="False" DisplaySelectionView="False" IsCriticalRule="False"><![CDATA[// <Name>Avoid methods too big, too complex</Name>
 warnif count > 0 from m in JustMyCode.Methods where 
     (m.NbLinesOfCode > 35 ||
    m.CyclomaticComplexity > 20)
 
-  let complexityScore = m.NbLinesOfCode/2 + m.CyclomaticComplexity 
+  let complexityScore = m.NbLinesOfCode/2 + m.CyclomaticComplexity
 
   orderby complexityScore descending,
           m.CyclomaticComplexity descending
@@ -1061,8 +1062,8 @@ warnif count > 0 from m in JustMyCode.Methods where
 // Low Quality methods// Metrics' definitions
 (  m.NbLinesOfCode > 30 ||          // http://www.cppdepend.com/Metrics.aspx#NbLinesOfCode
    m.CyclomaticComplexity > 20 ||   // http://www.cppdepend.com/Metrics.aspx#CC
-   m.NbParameters > 5 ||            // http://www.cppdepend.com/Metrics.aspx#NbParameters
-   m.NbVariables > 8 ||             // http://www.cppdepend.com/Metrics.aspx#NbVariables
+   m.NbParameters > 7 ||            // http://www.cppdepend.com/Metrics.aspx#NbParameters
+   (m.NbVariables-m.NbParameters) > 8 ||             // http://www.cppdepend.com/Metrics.aspx#NbVariables
    m.NbOverloads > 6 )
 select new { 
    m, 
@@ -1855,7 +1856,7 @@ select new {
 // using such nesting type.
 //</HowToFix>
 ]]></Query>
-      <Query Active="True" DisplayList="True" DisplayStat="True" DisplaySelectionView="False" IsCriticalRule="False"><![CDATA[// <Name>Projects with poor cohesion (RelationalCohesion)</Name>
+      <Query Active="False" DisplayList="True" DisplayStat="True" DisplaySelectionView="False" IsCriticalRule="False"><![CDATA[// <Name>Projects with poor cohesion (RelationalCohesion)</Name>
 warnif count > 0 from a in Application.Projects 
 
 // Build the types list on which we want to check cohesion
@@ -3589,7 +3590,7 @@ select new {
       (m.WasRemoved() ? " " : 
        m.NewerVersion().Visibility.ToString()),
    }]]></Query>
-      <Query Active="True" DisplayList="True" DisplayStat="True" DisplaySelectionView="False" IsCriticalRule="True"><![CDATA[// <Name>API Breaking Changes: Fields</Name>
+      <Query Active="False" DisplayList="True" DisplayStat="True" DisplaySelectionView="False" IsCriticalRule="True"><![CDATA[// <Name>API Breaking Changes: Fields</Name>
 // This rule warns if a publicly visible field is 
 // not publicly visible anymore or if it has been removed.
 // Such field can break the code of your clients.
@@ -6001,4 +6002,5 @@ select t
 
 ]]></Query>
     </Group>
-  </Queries></NDepend>
+  </Queries>
+</NDepend>
