@@ -20,8 +20,8 @@ static constexpr int invalidPropertySyntax = 16;
 static constexpr int invalidIndexerSyntax = 17;
 static constexpr int templateOnNamespace = 18;
 static constexpr int templateOnEnumeration = 19;
-static constexpr int inheritanceOnNamespace = 18;
-static constexpr int inheritanceOnEnumeration = 19;
+static constexpr int inheritanceOnNamespace = 20;
+static constexpr int inheritanceOnEnumeration = 21;
 
 struct _indent { size_t indentLevel; };
 struct __indent

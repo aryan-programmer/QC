@@ -197,8 +197,44 @@ void ReplaceAllSurroundedByNonAlnumChars( std::string& input , std::string searc
 
 void replaceInpAtStartSNRPaddedAtEnd( std::string &search , std::string &replace , std::string & input );
 
-static const std::unordered_map<std::string , std::string> languageExtensionDict
-{ {literal_cs,".cs" },{literal_cpp,"" } };
+static const std::unordered_map<std::string , std::unordered_map<std::string , std::string>> QCExtention_Language_Extention
+{
+	{
+		// The usual QC file converted to ".cs" & ".cpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
+		{".qc" },
+		{
+			{literal_cs,".cs" },
+			{literal_cpp,".cpp" },
+		}
+	},
+	{
+		// A usual QC file tagged with an 's' conveying that it is a source code file. Files of this extension converted to ".cs" & ".cpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
+		{".sqc" },
+		{
+			{literal_cs,".cs" },
+			{literal_cpp,".cpp" },
+		}
+	},
+	{
+		// A usual QC file tagged with an 'h' conveying that it is a header file containing "CPPInclude"s and forward declarations. This file is usually to be used in QC trans-compiled to C++ only. Files of this extension converted to ".cs" & ".hpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
+		{".hqc" },
+		{
+			{literal_cs,".cs" },
+			{literal_cpp,".hpp" },
+		}
+	},
+	{
+		// A usual QC file tagged with an 'u' conveying this is used mainly in game-engines like Unity & Unreal. Files of this extension converted to ".cs" & ".cpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
+		{".uqc" },
+		{
+			{ literal_cs,".cs" },
+			{ literal_cpp,".hpp" },
+		}
+	},
+};
+
+static const std::set<std::string> validQCFileExtentions { ".qc",".sqc",".hqc",".uqc" };
+
 static const std::unordered_map<char , char> openCloseBrace
 {
 	{ '<','>' },
@@ -1503,7 +1539,8 @@ void parse_file(
 
 void parse_file( boost::filesystem::path &filename , std::string &toLang )
 {
-	if ( filename.extension( ) != ".qc" ) return;
+	auto ext = filename.extension( ).string( );
+	if ( validQCFileExtentions.find( ext ) == validQCFileExtentions.end( ) ) return;
 
 	using namespace std;
 	using namespace std::string_literals;
@@ -1521,7 +1558,7 @@ void parse_file( boost::filesystem::path &filename , std::string &toLang )
 	parse_file( filename , storage , iter , end , succeeded , qc , ast );
 	if ( succeeded && iter == end )
 	{
-		auto csfile = filename.replace_extension( languageExtensionDict.at( toLang ) ).string( );
+		auto csfile = filename.replace_extension( QCExtention_Language_Extention.at( ext ).at( toLang ) ).string( );
 		struct __end__
 		{
 			size_t indent;
