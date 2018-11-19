@@ -47,13 +47,11 @@ void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , languageToConv
 	{
 		if ( doesDoLoopNeedParsing )
 		{
-			auto val = WriteDoLoop(
-				boost::get<std::string>( node ) ,
-				o ,
-				toLang );
+			// The text without the do-loop specifier.
+			auto val = WriteDoLoop( boost::get<std::string>( node ) , o , toLang );
 			doesDoLoopNeedParsing = false;
-			qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing )(
-				val );
+			qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing )
+				( val );
 		}
 		else boost::apply_visitor( qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing ) , node );
 	}
@@ -62,7 +60,7 @@ void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , languageToConv
 	{
 		if ( tagVal != tags::_Comment_ )--indentLevel;
 		o << std::endl << indent << to_string( tagVal , toLang , true );
-		if ( qc.qc.name != tags::_Do_ )o << std::endl;
+		if ( tagVal != tags::_Do_ )o << std::endl;
 	}
 }
 

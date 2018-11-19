@@ -3,6 +3,7 @@
 #include "cross_utils.h"
 #include "tag_block_manager.h"
 #include <sstream>
+#include <list>
 #include <boost/format.hpp>
 #include <boost/stacktrace.hpp>
 #define BOOST_SCOPE_EXIT_CONFIG_USE_LAMBDAS
@@ -597,7 +598,7 @@ void parse_lang_write_function( std::string &subVal , languageToConvertTo toLang
 	}
 }
 
-void parse_lang_InterfaceText_AccessModifiers( std::string& subVal , std::ostream & o , languageToConvertTo toLang )
+void parse_lang_InterfaceAccessModifiers( std::string& subVal , std::ostream & o , languageToConvertTo toLang )
 {
 	if ( boost::starts_with( subVal , "Public " ) )
 	{
@@ -607,7 +608,7 @@ void parse_lang_InterfaceText_AccessModifiers( std::string& subVal , std::ostrea
 	else if ( boost::starts_with( subVal , "Internal " ) )
 	{
 		o << replacements.at( toLang ).at( "Internal" ) << " ";
-		subVal.erase( subVal.begin( ) , subVal.begin( ) +  9 );
+		subVal.erase( subVal.begin( ) , subVal.begin( ) + 9 );
 	}
 	else if ( boost::starts_with( subVal , "Protected " ) )
 	{
@@ -638,7 +639,7 @@ void parse_lang_parse_interface_text( std::string & vText , languageToConvertTo 
 			if ( subVal == "" )return;
 			// We add an indent.
 			o << indent;
-			parse_lang_InterfaceText_AccessModifiers( subVal , o , toLang );
+			parse_lang_InterfaceAccessModifiers( subVal , o , toLang );
 			// If the language is C++ then we insert the C++ prefix
 			if ( toLang == languageToConvertTo::CPP ) o << cppPrefix;
 			// Else If the language is C# then we insert the C# prefix
@@ -830,6 +831,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 		isANoPostModiferTag = false ,
 		// Does the tag encapsulate abstract functions.
 		isAbstract = tagVal == tags::_Abstract_;
+
 	// We only trim from the left because we do not want the new line characters to be erased.
 	boost::trim_left( text );
 	// If the tag has been parsed or the tag is a comment tag then subVal
@@ -850,7 +852,8 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 	idx = subVal.length( );
 
 	// Only if the tag has not been parsed
-	if ( !isTagParsed )
+	// But no parsing needed when the block is abstract
+	if ( !isTagParsed && !isAbstract )
 	{
 		// We indent for cleanliness.
 		o << indent;
@@ -868,9 +871,10 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			parse_lang_write_CSNEI( subVal , toLang , o , tagVal );
 			break;
 
-		case tags::_Abstract_:
-			isSkip = true;
-			break;
+		// Case is disabled above
+		//case tags::_Abstract_:
+		//	isSkip = isANoPostModiferTag = true;
+		//	break;
 
 			// NativeCPP, NativeCS & Native
 		case tags::_CPP_: case tags::_CS_: case tags::_Native_: break;
@@ -1005,7 +1009,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			break;
 		}
 
-		// Inserts the subVal when the subVal has no difference.
+		// Inserts the subVal when the subVal has some length.
 		if ( subVal != "" && isANoPostModiferTag )
 		{
 			// Indent
@@ -1024,9 +1028,14 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			// We must insert a new line.
 			o << endl;
 			// Cases don't have braces
-			if ( !isCase ) o << indent << '{' << endl;
+			if ( !isCase )
+			{
+				auto txt = string_view( text ).substr( idx );
+				o << indent << '{';
+				if ( txt[ txt.find_first_not_of( " \t\n" ) + 1 ] != '\n' ) o << endl;
+			}
 		}
-		// Comments, Roots and Natives don't need an increment in the indent level
+		// Comments, Roots, Natives and abstract blocks don't need an increment in the indent level
 		if ( !( isComment || isRoot || isNative || isAbstract ) ) ++indentLevel;
 
 		// The tag parsing has been finished
@@ -1073,7 +1082,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 		// We convert the text to the language and print it.
 		convertTextToLang( o , text , toLang );
 		// We insert a new line, for spacing
-		o << endl;
+		if ( text[ text.find_last_not_of( " \t\n" ) + 1 ] != '\n' ) o << endl;
 	}
 	else if ( tagVal == tags::_Interface_ )
 	{
@@ -1096,7 +1105,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			// We convert the text to the language and print it.
 			convertTextToLang( o , vText , toLang );
 			// We insert a new line only if the last character is not a new line
-			if ( vText[ vText.length( ) - 1 ] != '\n' ) o << endl;
+			if ( vText[ vText.find_last_not_of( " \t\n" ) + 1 ] != '\n' ) o << endl;
 		}
 	}
 }
@@ -1428,10 +1437,11 @@ void convertTextToLang( std::ostream& o , std::string & text , languageToConvert
 	replace_all( text , "[|" , "<" );
 	checkStr( text , toLang );
 
+	trim_left( text );
+
 	size_t idx = 0;
 	bool start = true;
 	bool isStr = false;
-	std::list<std::string> lst;
 	bool applyNot = false;
 	if ( isStrQuote( 0 , text.begin( ) ) )applyNot = true;
 	loop_split(
