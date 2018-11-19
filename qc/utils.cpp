@@ -20,31 +20,41 @@ caref l_Of_ = " Of ";
 caref lVariable_ = "Variable ";
 caref l_Template_ = " Template ";
 caref l_Inherits_ = " Inherits ";
-const std::unordered_map<std::string_view , std::unordered_map<std::string_view , std::string_view>> replacements
+caref l_And_ = "And";
+
+const std::unordered_map<std::string_view , std::string_view> opReplacements
+{
+{"LessOrEq"		, "<=" },
+{"MoreOrEq"		, ">=" },
+{"NotEquals"	, "!=" },
+{"Equals"		, "==" },
+{"Less"			, "<" },
+{"More"			, ">" },
+{"LeftShiftSet"	, "<<=" },
+{"RightShiftSet", ">>=" },
+{"LeftShift"	, "<<" },
+{"RightShift"	, ">>" },
+};
+
+const std::unordered_map<std::string_view , std::map<std::string_view , std::string_view>> replacements
 {
 	{
 		literal_cs,
 		{
-{"Templated"	,"//"},
-{"CPPInclude"	,"//"},
+{"Abstract"		,"abstract"},
 {"AlsoGive"		,"yield return"},
+{"Await"		,"await"},
+{"My Base"		,"//"},
+{"Base"			,"base"},
+{"Break"		,"break"},
+{"CPPInclude"	,"//"},
+{"CSLine"		,"" },
+{"CPPLine"		,"//" },
+{"Constant"		,"const"},
+{"Templated"	,"//"},
 {"Finalize"		,"yield break"},
 {"Give"			,"return"},
-{"GenOf"		,"System.Collections.Generic.IEnumerable"},
-{"IterGenOf"	,"System.Collections.Generic.IEnumerator"},
-{"Gen"			,"System.Collections.IEnumerable"},
-{"IterGen"		,"System.Collections.IEnumerator"},
-{"Abstract"		,"abstract"},
-{"Await"		,"await"},
-{"Base"			,"base"},
-{"Bool"			,"bool"},
-{"Break"		,"break"},
-{"Byte"			,"byte"},
-{"Case"			,"case"},
 {"Class"		,"class"},
-{"Char"			,"char"},
-{"WChar"		,"char"},
-{"Constant"		,"const"},
 {"CPPConst"		,""},
 {"Continue"		,"continue"},
 {"Default"		,"default"},
@@ -54,44 +64,25 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Extern"		,"extern"},
 {"False"		,"false"},
 {"Goto"			,"goto"},
-{"HashCode"		,"int"},
 {"Implicit"		,"implicit"},
 {"In"			,"in"},
-{"Int"			,"int"},
-{"Interface"	,"interface"},
-{"Internal"		,"internal"},
 {"Is"			,"is"},
-{"Long"			,"long"},
 {"New"			,"new"},
-{"CPPNew"		,"new"},
+{"DynNew"		,"new"},
 //NullPtrType
 //NullPtr
 {"Null"			,"null"},
-{"Object"		,"object"},
 {"Operator"		,"operator"},
-{"Out"			,"out"},
-{"CPPOut"		,""},
 {"Override"		,"override"},
-{"CPPOverride"	,""},
 {"Parameters"	,"params"},
 {"Private"		,"private"},
 {"Protected"	,"protected"},
 {"Public"		,"public"},
+{"Internal"		,"internal"},
 {"ReadOnly"		,"readonly"},
-{"Ref"			,"ref"},
-{"CPPRef"		,""},
-{"SByte"		,"sbyte"},
 {"Sealed"		,"sealed"},
-{"Short"		,"short"},
-{"Single"		,"float"},
-{"Float"		,"float"},
-{"Double"		,"double"},
 {"StackAlloc"	,"stackalloc"},
-{"Static"		,"static"},
-{"String"		,"string"},
-{"StringRef"	,"string"},
-{"WString"		,"string"},
-{"WStringRef"	,"string"},
+{"Static","static"},
 {"Structure"	,"struct"},
 {"Me"			,"this"},
 {"Throw"		,"throw"},
@@ -101,48 +92,85 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Volatile"		,"volatile"},
 {"Auto"			,"var"},
 {"CSVar"		,"var"},
-{"Using Namespace QCCore"	,"using QCCore; using static QCCore.QCCoreCls"},
-{"Using Namespace"	,"using"},
+{"using namespace QCCore"	,"using QCCore; using static QCCore.QCCoreCls"},
+{"using namespace"	,"using"},
+{"Namespace"	,"namespace"},
 {"Using"		,"using"},
-{"UShort"		,"ushort"},
-{"UInt"			,"uint"},
-{"ULong"		,"ulong"},
 {"Global"		,"global" },
-{"PriMutex"		,"object" },
 {"Dynamic"		,"dynamic" },
 {"Wide"			,"" },
 {"REM"			,"//" },
 {"TypeOf"		,"typeof" },
 {"Get"			,"get" },
 {"Set"			,"set" },
-{"CSLine"		,"" },
-{"CPPLine"		,"//" },
+{"CSPublic"		,"public" },
+
+#pragma region Types
+{"Int16","short"},
+{"Int32","int"},
+{"Int64","long"},
+{"UInt16","ushort"},
+{"UInt32","uint"},
+{"UInt64","ulong"},
+{"Short","short"},
+{"Int","int"},
+{"Long","long"},
+{"UShort","ushort"},
+{"UInt","uint"},
+{"ULong","ulong"},
+{"Char","char"},
+{"WChar","char"},
+{"Bool","bool"},
+{"Byte","byte"},
+{"SByte","sbyte"},
+{"Object","object"},
+{"HashCode","int"},
+{"Float","float"},
+{"Single","float"},
+{"Double","double"},
+{"String","string"},
+{"WString","string"},
+{"StringRef","string"},
+{"WStringRef","string"},
+{"GenOf","System.Collections.Generic.IEnumerable"},
+{"Gen","System.Collections.IEnumerable"},
+{"IterGenOf","System.Collections.Generic.IEnumerator"},
+{"IterGen","System.Collections.IEnumerator"},
+{"Ref","ref"},
+{"CPPRef",""},
+{"Out","out"},
+{"CPPOut",""},
+{"PriMutex","object"},
+#pragma endregion
 		}
 	},
 		{
 		literal_cpp,
 		{
-{"Templated"	,"template<typename... Args>"},
-{"CPPInclude QCCore","#include <QCCore.h>"},
-{"CPPInclude","#include"},
-{"Using Namespace","using namespace"},
-{"Using","using"},
-{"Constant String","constexpr ::std::string_view" },
-{"Constant WString","constexpr ::std::wstring_view" },
-{"Me","(*this)"},
+{"Abstract"		,""},
 {"AlsoGive","co_yield"},
+{"Await","co_await"},
+//Base
+//Bool = bool
+{"My Base"	,"using Base"},
+//Byte = std::byte
+{"CPPInclude","#include"},
+{"CPPLine","" },
+{"CSLine","//" },
+{"Constant","static constexpr"},
+{"Templated"	,"template<typename... Args>"},
+{"CPPInclude QCCore","#include <QCCore.hpp>"},
+{"Namespace","namespace"},
+{"Using","using"},
+{"Constant String","static constexpr ::std::string_view" },
+{"Constant WString","static constexpr ::std::wstring_view" },
+{"Me","(*this)"},
 {"Finalize","return"},
 {"Give","return"},
-{"Gen","std::experimental::generator<Object>"},
-{"GenOf","std::experimental::generator"},
-{"Await","co_await"},
-{"Base","base"},
 {"Break","break"},
-{"Case","case"},
 {"Class","class"},
 {"Checked",""},
 {"CPPConst","const"},
-{"Constant","constexpr"},
 {"Continue","continue"},
 {"Default","default"},
 {"Delegate","[&]"},
@@ -151,24 +179,19 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Extern","extern"},
 {"False","false"},
 {"Goto","goto"},
+{"Is",":"},
 {"Implicit",""},
-{"Interface","interface"},
-{"CPPNew","new"},
+{"DynNew","new"},
 {"New",""},
-{"NullPtrType","std::nullptr_t"},
 {"NullPtr","nullptr"},
 {"Null","nullptr"},
 {"Operator","operator"},
-{"Out",""},
-{"CPPOut","&"},
 {"Override",""},
-{"CPPOverride","override"},
 {"Private","private:"},
 {"Protected","protected:"},
 {"Public","public:"},
+{"Internal","public:"},
 {"ReadOnly","const"},
-{"Ref",""},
-{"CPPRef","&"},
 {"Sealed","final"},
 {"StackAlloc",""},
 {"Static","static"},
@@ -181,12 +204,48 @@ const std::unordered_map<std::string_view , std::unordered_map<std::string_view 
 {"Auto","auto"},
 {"CSVar",""},
 {"Global",""},
-{"PriMutex","::std::mutex"},
 {"Dynamic","auto"},
 { "Wide","L" },
 {"REM","//" },
-{"CPPLine","" },
-{"CSLine","//" },
+{"CSPublic"		,"" },
+
+#pragma region Types
+//Int16
+//Int32
+//Int64
+//UInt16
+//UInt32
+//UInt64
+//Short
+//Int
+//Long
+//UShort
+//UInt
+//ULong
+//Char
+//WChar
+//Bool
+//Byte
+//SByte
+//Object
+//HashCode
+//Float
+//Single
+//Double
+//String
+//WString
+//StringRef
+//WStringRef
+{"GenOf","std::experimental::generator<T>"},
+{"Gen","std::experimental::generator<Object>"},
+{"Ref",""},
+{"CPPRef","&"},
+{"Out",""},
+{"CPPOut","&"},
+{"NullPtrType","std::nullptr_t"},
+{"PriMutex","::std::mutex"},
+				#pragma endregion
+
 		}
 	}
 };
@@ -262,6 +321,8 @@ auto isNewLine =
 };
 
 void ReplaceNewLines( std::string &subVal );
+
+void parse_lang_CSI_replace_And( const std::string & toLang , std::string &inheritance , std::ostream & o );
 
 auto __indent::operator()( size_t indentLevel )-> _indent { return _indent { indentLevel }; }
 
@@ -411,7 +472,6 @@ void parse_lang_when_noPostModifierTag( std::ostream & o , const tags & tagVal ,
 void parse_lang_write_foreach_when_cpp( std::ostream & o , const tags & tagVal , const std::string & toLang , bool isCpp , std::string &subVal )
 {
 	o << to_string( tagVal , toLang ) << '(';
-	if ( isCpp ) ReplaceAllSurroundedByNonAlnumChars( subVal , "In" , ":" );
 	convertTextToLang( o , subVal , toLang , false , false );
 	o << ")";
 }
@@ -534,15 +594,9 @@ void parse_lang_write_function( std::string &subVal , const std::string & toLang
 	}
 }
 
-void parse_lang_parse_interface_text( std::string & vText , const std::string & toLang , std::ostream & o , const char * semicolon , bool &isCpp )
+void parse_lang_parse_interface_text( std::string & vText , const std::string & toLang , std::ostream & o , const char * semicolon , bool &isCpp , bool& isCS , std::string_view cppPrefix , std::string_view csPrefix )
 {
 	using namespace std;
-	// The stream for retrieval
-	std::stringstream strm;
-	// We convert the string and write to the stream
-	convertTextToLang( strm , vText , toLang , false , false , false );
-	// We retrieve the string
-	vText = strm.str( );
 	// We trim the string
 	boost::trim( vText );
 	// If the text is empty then we return
@@ -554,15 +608,33 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 		// The splitting function
 		isNewLine ,
 		// The looping function
-		[ &o , &semicolon , &isCpp , &toLang ]( string&& subVal )
+		[ &o , &semicolon , &isCpp , &isCS , &toLang , &cppPrefix , &csPrefix ]( string&& subVal )
 		{
 			// We trim the string
 			boost::trim( subVal );
 			if ( subVal == "" )return;
 			// We add an indent.
 			o << indent;
-			// If the language is C++ then we insert "virtual"
-			if ( isCpp ) o << "virtual ";
+			if ( boost::starts_with( subVal , "Public " ) )
+			{
+				o << replacements.at( toLang ).at( "Public" ) << " ";
+				subVal.erase( subVal.begin( ) , subVal.begin( ) + 8 );
+			}
+			else if ( boost::starts_with( subVal , "Internal " ) )
+			{
+				o << replacements.at( toLang ).at( "Internal" ) << " ";
+				subVal.erase( subVal.begin( ) , subVal.begin( ) + 11 );
+			}
+			else if ( boost::starts_with( subVal , "Protected " ) )
+			{
+				o << replacements.at( toLang ).at( "Protected" ) << " ";
+				subVal.erase( subVal.begin( ) , subVal.begin( ) + 11 );
+			}
+			else o << replacements.at( toLang ).at( "Protected" ) << " ";
+			// If the language is C++ then we insert the C++ prefix
+			if ( isCpp ) o << cppPrefix;
+			// Else If the language is C# then we insert the C# prefix
+			else if ( isCS ) o << csPrefix;
 			// If the return type is given
 			if ( boost::contains( subVal , l_Gives_ ) )
 			{
@@ -624,7 +696,24 @@ void parse_lang_write_event( std::string &subVal , const std::string & toLang , 
 	convertTextToLang( o , funcSig , toLang , false , false );
 }
 
-void parseLang_writeCSNEI_Template( std::string & subVal , const std::string & toLang , std::ostream & o , const tags & tagVal )
+
+void parse_lang_CSI_replace_And( const std::string & toLang , std::string &inheritance , std::ostream & o )
+{
+	if ( toLang == literal_cpp )
+	{
+		// The default and mandatory inheritance access specifier is Public.
+		ReplaceAllSurroundedByNonAlnumChars( inheritance , l_And_ , ", Public " );
+		// The inheritance specifier access specifier is Public for the first type
+		o << "public ";
+	}
+	else
+	{
+		// " And " means that the CSI inherits the previous _And_ the next types.
+		ReplaceAllSurroundedByNonAlnumChars( inheritance , l_And_ , ", " );
+	}
+}
+
+void parseLang_writeCSI_Template( std::string & subVal , const std::string & toLang , std::ostream & o , const tags & tagVal )
 {
 	using namespace std;
 
@@ -656,13 +745,7 @@ void parseLang_writeCSNEI_Template( std::string & subVal , const std::string & t
 		auto inheritance = newSubVal.substr( ( inheritsIdx - newSubVal.begin( ) ) + 10 );
 		// The inherits specifier
 		o << ": ";
-		if ( toLang == literal_cpp )
-		{
-			// The default and mandatory inheritance access specifier is Public.
-			boost::replace_all( inheritance , "," , ", Public " );
-			// The inheritance specifier access specifier is Public for the first type
-			o << "public ";
-		}
+		parse_lang_CSI_replace_And( toLang , inheritance , o );
 		// We print the inheritance list.
 		convertTextToLang( o , inheritance , toLang , false , false );
 	}
@@ -691,7 +774,7 @@ void parse_lang_write_CSNEI( std::string &subVal , const std::string & toLang , 
 			throw qcParsingException( "Namespaces can't have templates." , templateOnNamespace );
 		if ( tagVal == tags::_Enum_ )
 			throw qcParsingException( "Enumerations can't have templates." , templateOnEnumeration );
-		parseLang_writeCSNEI_Template( subVal , toLang , o , tagVal );
+		parseLang_writeCSI_Template( subVal , toLang , o , tagVal );
 	}
 	else
 	{
@@ -714,13 +797,7 @@ void parse_lang_write_CSNEI( std::string &subVal , const std::string & toLang , 
 			auto inheritance = subVal.substr( ( inheritsIdx - subVal.begin( ) ) + 10 );
 			// The inherits specifier
 			o << ": ";
-			if ( toLang == literal_cpp )
-			{
-				// The default and mandatory inheritance access specifier is Public.
-				boost::replace_all( inheritance , "," , ", Public " );
-				// The inheritance specifier access specifier is Public for the first type
-				o << "public ";
-			}
+			parse_lang_CSI_replace_And( toLang , inheritance , o );
 			// We print the inheritance list.
 			convertTextToLang( o , inheritance , toLang , false , false );
 		}
@@ -734,9 +811,9 @@ void ReplaceNewLines( std::string &subVal )
 	boost::replace_all( subVal , " _\n" , " \n" );
 }
 
-void parseLang( std::ostream& o , bool& isTagParsed ,
-				std::string & text , const tags & tagVal ,
-				const std::string & toLang )
+void parse_lang( std::ostream& o , bool& isTagParsed ,
+				 std::string & text , const tags & tagVal ,
+				 const std::string & toLang )
 {
 	using namespace std;
 	auto
@@ -755,7 +832,9 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		// Is the language equal to C#, used to avoid repeated comparisons.
 		isCs = toLang == literal_cs ,
 		// Is the tag one that has no post modifiers.
-		isANoPostModiferTag = false;
+		isANoPostModiferTag = false ,
+		// Does the tag encapsulate abstract functions.
+		isAbstract = tagVal == tags::_Abstract_;
 	// We only trim from the left because we do not want the new line characters to be erased.
 	boost::trim_left( text );
 	// If the tag has been parsed or the tag is a comment tag then subVal
@@ -792,6 +871,10 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		case tags::_Class_: case tags::_Structure_: case tags::_Namespace_:
 		case tags::_Interface_: case tags::_Enum_:
 			parse_lang_write_CSNEI( subVal , toLang , o , tagVal );
+			break;
+
+		case tags::_Abstract_:
+			isSkip = true;
 			break;
 
 			// NativeCPP, NativeCS & Native
@@ -949,7 +1032,7 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 			if ( !isCase ) o << indent << '{' << endl;
 		}
 		// Comments, Roots and Natives don't need an increment in the indent level
-		if ( !( isComment || isRoot || isNative ) ) ++indentLevel;
+		if ( !( isComment || isRoot || isNative || isAbstract ) ) ++indentLevel;
 
 		// The tag parsing has been finished
 		isTagParsed = true;
@@ -1002,7 +1085,12 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 		auto _text = wasTagParsed ? "" : text.substr( idx );
 		auto& vText = wasTagParsed ? text : _text;
 		// We parse the interface text
-		parse_lang_parse_interface_text( vText , toLang , o , ";" , isCpp );
+		parse_lang_parse_interface_text( vText , toLang , o , ";" , isCpp , isCs , "virtual " , "" );
+	}
+	else if ( isAbstract )
+		// The conversions for abstract functions and interface functions are the same.
+	{
+		parse_lang_parse_interface_text( text , toLang , o , ";" , isCpp , isCs , "virtual " , "abstract " );
 	}
 	else
 	{
@@ -1020,16 +1108,8 @@ void parseLang( std::ostream& o , bool& isTagParsed ,
 
 void commonReplacement( std::string & val )
 {
-	ReplaceAllSurroundedByNonAlnumChars( val , "LessOrEq" , "<=" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "MoreOrEq" , ">=" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "NotEquals" , "!=" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "Equals" , "==" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "Less" , "<" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "More" , ">" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "LeftShiftSet" , "<<=" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "RightShiftSet" , ">>=" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "LeftShift" , "<<" );
-	ReplaceAllSurroundedByNonAlnumChars( val , "RightShift" , ">>" );
+	for ( const auto&[ search , replace ] : opReplacements )
+		ReplaceAllSurroundedByNonAlnumChars( val , std::string( search ) , std::string( replace ) );
 }
 
 // Equality comparer for chars that considers ' ' == '\t'
@@ -1223,8 +1303,8 @@ void convStr( std::string & val , const std::string & toLang , bool processNewLi
 			val.insert( 0 , replace );
 		}
 	}
-	for ( auto& i : replacements.at( toLang ) )
-		ReplaceAllSurroundedByNonAlnumChars( val , std::string( i.first ) , std::string( i.second ) );
+	for ( const auto&[ search , replace ] : replacements.at( toLang ) )
+		ReplaceAllSurroundedByNonAlnumChars( val , std::string( search ) , std::string( replace ) );
 	commonReplacement( val );
 	if ( processNewLines )
 	{
@@ -1349,7 +1429,6 @@ std::string WriteDoLoop( std::string & val , std::ostream & o , const std::strin
 void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang , bool doStartIndent , bool processNewLines , bool remCont )
 {
 	using namespace boost::algorithm;
-
 	replace_all( text , "|]" , ">" );
 	replace_all( text , "[|" , "<" );
 	checkStr( text , toLang );

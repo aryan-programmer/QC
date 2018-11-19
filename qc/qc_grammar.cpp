@@ -23,7 +23,7 @@ struct qc_parser::qc_node_printer : boost::static_visitor<>
 	}
 
 	void operator()( std::string& text ) const
-	{ parseLang( o , isTagParsed , text , tagVal , toLang ); }
+	{ parse_lang( o , isTagParsed , text , tagVal , toLang ); }
 
 	std::ostream& o;
 	const std::string& toLang;
@@ -58,7 +58,7 @@ void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::str
 		else boost::apply_visitor( qc_node_printer( o , toLang , tagVal , qc.tagParsed , doesDoLoopNeedParsing ) , node );
 	}
 
-	if ( tagVal != tags::_Native_ && tagVal != tags::_QC_ )
+	if ( tagVal != tags::_Native_ && tagVal != tags::_QC_ && tagVal != tags::_Abstract_ )
 	{
 		if ( tagVal != tags::_Comment_ )--indentLevel;
 		o << std::endl << indent << to_string( tagVal , toLang , true );

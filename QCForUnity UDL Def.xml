@@ -1,5 +1,5 @@
 <NotepadPlus>
-    <UserLang name="QC" ext="qc, hqc, sqc" udlVersion="2.1">
+    <UserLang name="QCForUnity" ext="qc, uqc" udlVersion="2.1">
         <Settings>
             <Global caseIgnored="no" allowFoldOfComments="yes" foldCompact="no" forcePureLC="0" decimalSeparator="0" />
             <Prefix Keywords1="no" Keywords2="yes" Keywords3="no" Keywords4="no" Keywords5="no" Keywords6="no" Keywords7="no" Keywords8="no" />
@@ -26,11 +26,11 @@
             <Keywords name="Folders in comment, close">EndRegion</Keywords>
             <Keywords name="Keywords1">Gives To Step Of Variable Template Inherits Abstract AlsoGive Await My Base Base Break CPPInclude CSLine CPPLine Constant Templated Finalize Give Class CPPConst Continue Default Delegate Event Explicit Extern False Goto Implicit In Is New DynNew NullPtrType NullPtr Null Operator Override Parameters Private Protected Public ReadOnly Sealed StackAlloc Static Structure Me Throw True Virtual Nothing Volatile Auto CSVar Using Global Dynamic Wide REM TypeOf Get Set CSPublic Int16 Int32 Int64 UInt16 UInt32 UInt64 Short Int Long UShort UInt ULong Char WChar Bool Byte SByte Object HashCode Float Single Double String WString StringRef WStringRef GenOf Gen IterGenOf IterGen Ref CPPRef Out CPPOut PriMutex Namespace</Keywords>
             <Keywords name="Keywords2">@ m_</Keywords>
-            <Keywords name="Keywords3">System Collections Generic</Keywords>
-            <Keywords name="Keywords4"></Keywords>
-            <Keywords name="Keywords5"></Keywords>
-            <Keywords name="Keywords6"></Keywords>
-            <Keywords name="Keywords7"></Keywords>
+            <Keywords name="Keywords3">UnityEngine UnityEditor Vuforia System Collections Generic</Keywords>
+            <Keywords name="Keywords4">MonoBehaviour GameObject Transform Behaviour Quaternion Vector2 Vector3 Vector4 IntVector2 IntVector3 IntVector4 Random Gizmos Time Animation Animator Rigidbody Rigidbody2D CapsuleCollider BoxCollider SphereCollider BoxCollider2D Application Color Mathf Renderer Material AudioClip Element AudioSource Input KeyCode Physics RaycastHit</Keywords>
+            <Keywords name="Keywords5">transform gameObject activeSelf childCount enabled x y z w position rotation localScale lossyScale deltaTime fixedDeltaTime timeScale localPosition localRotation name isEditor forward</Keywords>
+            <Keywords name="Keywords6">GetComponent GetComponentInChildren GetComponents GetComponentsInChildren Instantiate Range DrawWireCube print Start Update FixedUpdate SetActive Lerp Slerp Floor FloorToInt Ceil CeilToInt GetKeyDown GetKey GetKeyUp Raycast</Keywords>
+            <Keywords name="Keywords7">SerializeField Range Slider Header RequireComponent</Keywords>
             <Keywords name="Keywords8"></Keywords>
             <Keywords name="Delimiters">00` 01\ 02` 03NOTE: 03TODO: 03UNDONE: 03HACK: 04 05((EOL)) 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23</Keywords>
         </KeywordLists>
@@ -42,7 +42,7 @@
             <WordsStyle name="KEYWORDS1" fgColor="0080FF" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="KEYWORDS2" fgColor="CC0066" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="KEYWORDS3" fgColor="8C4646" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
-            <WordsStyle name="KEYWORDS4" fgColor="0051A2" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS4" fgColor="2B91AF" bgColor="FDF6E3" fontName="" fontStyle="1" nesting="0" />
             <WordsStyle name="KEYWORDS5" fgColor="4FB649" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="KEYWORDS6" fgColor="808040" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />
             <WordsStyle name="KEYWORDS7" fgColor="4A596A" bgColor="FDF6E3" fontName="" fontStyle="0" nesting="0" />

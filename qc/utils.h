@@ -32,7 +32,7 @@ static __indent indent;
 std::ostream& operator<<( std::ostream& o , _indent&& v );
 std::ostream& operator<<( std::ostream& o , __indent );
 
-void parseLang( std::ostream& o , bool& isTagParsed , std::string & text , const tags & tagVal , const std::string & toLang );
+void parse_lang( std::ostream& o , bool& isTagParsed , std::string & text , const tags & tagVal , const std::string & toLang );
 void commonReplacement( std::string & val );
 void convStr( std::string & val , const std::string & toLang , bool processNewLines = true , bool applyException = false );
 void replaceAngleBrace( std::string & val );
