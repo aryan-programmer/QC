@@ -5,10 +5,11 @@ const char* empty_str( ) { static const char* val = ""; return val; }
 const char* closeBrace( ) { static const char* val = "}"; return val; }
 const char* closeBraceThenSemicolon( ) { static const char* val = "};"; return val; }
 
-std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string_view , std::string_view>>> constructsMap
-{
+using tagToStrMap = std::unordered_map<tags , std::pair<std::string_view , std::string_view>>;
+
+std::unordered_map<languageToConvertTo , tagToStrMap> constructsMap {
 	{
-		literal_cs,
+		languageToConvertTo::CS,
 		{
 { tags::_Blk_,{empty_str( ),closeBrace( )}},
 { tags::_QC_,{empty_str( ),empty_str( )}},
@@ -56,7 +57,7 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 		}
 	},
 	{
-		literal_cpp,
+		languageToConvertTo::CPP,
 		{
 { tags::_Blk_,{empty_str( ),closeBrace( )}},
 { tags::_QC_,{empty_str( ),empty_str( )}},
@@ -95,19 +96,18 @@ std::unordered_map<std::string , std::unordered_map<tags , std::pair<std::string
 { tags::_Using_,{empty_str( ),closeBrace( ) } }
 		}
 	},
-{
-	"QC",
-{DEFINE_QC_CONSTRUCTS }
- }
 };
+tagToStrMap constructsMapQCL { DEFINE_QC_CONSTRUCTS };
 
-std::string_view to_string( const tags & tag , const std::string & lang , bool end )
+std::string_view to_string( const tags & tag , languageToConvertTo lang , bool end )
 {
 	switch ( tag )
 	{
 		DEFINE_OSTR_SWITCH_CASES
 	default:
 		return "Unknown";
-		break;
 	}
 }
+
+std::string_view to_stringQCL( const tags & tag , bool end )
+{ return end ? constructsMapQCL.at( tag ).second : constructsMapQCL.at( tag ).first; }

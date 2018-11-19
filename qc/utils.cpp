@@ -36,10 +36,10 @@ const std::unordered_map<std::string_view , std::string_view> opReplacements
 {"RightShift"	, ">>" },
 };
 
-const std::unordered_map<std::string_view , std::map<std::string_view , std::string_view>> replacements
+const std::unordered_map<languageToConvertTo , std::map<std::string_view , std::string_view>> replacements
 {
 	{
-		literal_cs,
+		languageToConvertTo::CS,
 		{
 {"Abstract"		,"abstract"},
 {"AlsoGive"		,"yield return"},
@@ -145,7 +145,7 @@ const std::unordered_map<std::string_view , std::map<std::string_view , std::str
 		}
 	},
 		{
-		literal_cpp,
+		languageToConvertTo::CPP,
 		{
 {"Abstract"		,""},
 {"AlsoGive","co_yield"},
@@ -256,38 +256,38 @@ void ReplaceAllSurroundedByNonAlnumChars( std::string& input , std::string searc
 
 void replaceInpAtStartSNRPaddedAtEnd( std::string &search , std::string &replace , std::string & input );
 
-static const std::unordered_map<std::string , std::unordered_map<std::string , std::string>> QCExtention_Language_Extention
+static const std::unordered_map<std::string , std::unordered_map<languageToConvertTo , std::string>> QCExtention_Language_Extention
 {
 	{
 		// The usual QC file converted to ".cs" & ".cpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
 		{".qc" },
 		{
-			{literal_cs,".cs" },
-			{literal_cpp,".cpp" },
+			{languageToConvertTo::CS,".cs" },
+			{languageToConvertTo::CPP,".cpp" },
 		}
 	},
 	{
 		// A usual QC file tagged with an 's' conveying that it is a source code file. Files of this extension converted to ".cs" & ".cpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
 		{".sqc" },
 		{
-			{literal_cs,".cs" },
-			{literal_cpp,".cpp" },
+			{languageToConvertTo::CS,".cs" },
+			{languageToConvertTo::CPP,".cpp" },
 		}
 	},
 	{
 		// A usual QC file tagged with an 'h' conveying that it is a header file containing "CPPInclude"s and forward declarations. This file is usually to be used in QC trans-compiled to C++ only. Files of this extension converted to ".cs" & ".hpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
 		{".hqc" },
 		{
-			{literal_cs,".cs" },
-			{literal_cpp,".hpp" },
+			{languageToConvertTo::CS,".cs" },
+			{languageToConvertTo::CPP,".hpp" },
 		}
 	},
 	{
 		// A usual QC file tagged with an 'u' conveying this is used mainly in game-engines like Unity & Unreal. Files of this extension converted to ".cs" & ".cpp" in QC trans-compiled to C# and QC trans-compiled to C++, respectively.
 		{".uqc" },
 		{
-			{ literal_cs,".cs" },
-			{ literal_cpp,".hpp" },
+			{ languageToConvertTo::CS,".cs" },
+			{ languageToConvertTo::CPP,".hpp" },
 		}
 	},
 };
@@ -304,7 +304,6 @@ static const std::unordered_map<char , char> openCloseBrace
 
 static const std::set<char> allOpenBraces { '<','(','[','{' };
 static const std::set<char> allCloseBraces { '>',')',']','}' };
-static const std::set<std::string> supportedLanguages { literal_cs,literal_cpp };
 
 auto isNewLine =
 [ ] ( auto&& i , auto&& iter )
@@ -322,7 +321,7 @@ auto isNewLine =
 
 void ReplaceNewLines( std::string &subVal );
 
-void parse_lang_CSI_replace_And( const std::string & toLang , std::string &inheritance , std::ostream & o );
+void parse_lang_CSI_replace_And( languageToConvertTo toLang , std::string &inheritance , std::ostream & o );
 
 auto __indent::operator()( size_t indentLevel )-> _indent { return _indent { indentLevel }; }
 
@@ -337,7 +336,7 @@ std::ostream& operator<<( std::ostream& o , __indent )
 	return o;
 }
 
-void parse_lang_write_property( std::string &subVal , const std::string & toLang , std::ostream & o )
+void parse_lang_write_property( std::string &subVal , languageToConvertTo toLang , std::ostream & o )
 {
 	std::stringstream strm;
 	convertTextToLang( strm , subVal , toLang , false , false , false );
@@ -356,7 +355,7 @@ void parse_lang_write_property( std::string &subVal , const std::string & toLang
 	convertTextToLang( o , funcSig , toLang , false , false );
 }
 
-void parse_lang_write_indexer( std::string &subVal , const std::string & toLang , std::ostream & o )
+void parse_lang_write_indexer( std::string &subVal , languageToConvertTo toLang , std::ostream & o )
 {
 	std::stringstream strm;
 	convertTextToLang( strm , subVal , toLang , false , false , false );
@@ -375,7 +374,7 @@ void parse_lang_write_indexer( std::string &subVal , const std::string & toLang 
 	convertTextToLang( o , funcSig , toLang , false , false );
 }
 
-void parse_lang_write_for_loop( std::string &subVal , const std::string & toLang , const char * errorDesc , std::ostream & o , const char * whenStepFormat , const char * whenNoStepFormat )
+void parse_lang_write_for_loop( std::string &subVal , languageToConvertTo toLang , const char * errorDesc , std::ostream & o , const char * whenStepFormat , const char * whenNoStepFormat )
 {
 	using qi::lexeme;
 	using qi::lit;
@@ -454,14 +453,14 @@ void parse_lang_write_for_loop( std::string &subVal , const std::string & toLang
 	else throw qcParsingException( errorDesc , invalidLoopSyntax );
 }
 
-void parse_lang_write_until( std::ostream & o , std::string &subVal , const std::string & toLang )
+void parse_lang_write_until( std::ostream & o , std::string &subVal , languageToConvertTo toLang )
 {
 	o << "while( !( ";
 	convertTextToLang( o , subVal , toLang , false , false );
 	o << " ) )";
 }
 
-void parse_lang_when_noPostModifierTag( std::ostream & o , const tags & tagVal , const std::string & toLang , bool isCase )
+void parse_lang_when_noPostModifierTag( std::ostream & o , const tags & tagVal , languageToConvertTo toLang , bool isCase )
 {
 	using namespace std;
 	o << to_string( tagVal , toLang );
@@ -469,14 +468,14 @@ void parse_lang_when_noPostModifierTag( std::ostream & o , const tags & tagVal ,
 	if ( !isCase ) o << indent << '{' << endl;
 }
 
-void parse_lang_write_foreach_when_cpp( std::ostream & o , const tags & tagVal , const std::string & toLang , bool isCpp , std::string &subVal )
+void parse_lang_write_foreach_when_cpp( std::ostream & o , const tags & tagVal , languageToConvertTo toLang , std::string &subVal )
 {
 	o << to_string( tagVal , toLang ) << '(';
 	convertTextToLang( o , subVal , toLang , false , false );
 	o << ")";
 }
 
-void parse_lang_write_using_when_cpp( bool &isSkip , std::ostream & o , std::string &subVal , const std::string & toLang , const char * semicolon )
+void parse_lang_write_using_when_cpp( bool &isSkip , std::ostream & o , std::string &subVal , languageToConvertTo toLang , const char * semicolon )
 {
 	using namespace std;
 
@@ -487,14 +486,14 @@ void parse_lang_write_using_when_cpp( bool &isSkip , std::ostream & o , std::str
 	o << semicolon << endl;
 }
 
-void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::string & subVal , const std::string & toLang , std::ostream & o , std::string &retVal , std::string &funcSig )
+void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::string & subVal , languageToConvertTo toLang , std::ostream & o , std::string &retVal , std::string &funcSig )
 {
 	using namespace std;
 	using namespace boost;
 
 	// The template parameters
 	auto templateParameter = string( templateIdx + 10 , subVal.end( ) );
-	if ( toLang == literal_cpp )
+	if ( toLang == languageToConvertTo::CPP )
 		// If the language is C++ then we write the starting template<...> parameters.
 		o << "template<typename " << replace_all_copy( templateParameter , "," , ", typename " ) << ">\n" << indent;
 
@@ -503,7 +502,7 @@ void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::
 	// a space
 	o << ' ';
 	// If the language is C++ then we just write the function signature as is.
-	if ( toLang == literal_cpp )
+	if ( toLang == languageToConvertTo::CPP )
 		convertTextToLang( o , funcSig , toLang , false , false );
 	else
 	{
@@ -525,23 +524,27 @@ void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::
 	}
 }
 
-void parseLang_writeFunction_whenGive_t( bool isTemplated , std::string::iterator &givesIdx , std::string & subVal , std::ostream & o , const std::string & toLang , std::string::iterator &templateIdx )
+void parseLang_functionRetTypNotGeneric( std::string::iterator & givesIdx , std::string & subVal , std::ostream & o , languageToConvertTo toLang )
 {
 	using namespace std;
 
-	if ( !isTemplated )
-	{
-		// Then the get the return type
-		auto retVal = string( givesIdx + 7 , subVal.end( ) );
-		// Convert and write it
-		convertTextToLang( o , retVal , toLang , false , false );
-		// a space
-		o << ' ';
-		// Get the function signature
-		auto funcSig = subVal.substr( 0 , givesIdx - subVal.begin( ) );
-		// Convert and write it
-		convertTextToLang( o , funcSig , toLang , false , false );
-	}
+	// Then the get the return type
+	auto retVal = string( givesIdx + 7 , subVal.end( ) );
+	// Convert and write it
+	convertTextToLang( o , retVal , toLang , false , false );
+	// a space
+	o << ' ';
+	// Get the function signature
+	auto funcSig = subVal.substr( 0 , givesIdx - subVal.begin( ) );
+	// Convert and write it
+	convertTextToLang( o , funcSig , toLang , false , false );
+}
+
+void parseLang_writeFunction_whenGive( bool isTemplated , std::string::iterator &givesIdx , std::string & subVal , std::ostream & o , languageToConvertTo toLang , std::string::iterator &templateIdx )
+{
+	using namespace std;
+
+	if ( !isTemplated ) parseLang_functionRetTypNotGeneric( givesIdx , subVal , o , toLang );
 	else
 	{
 		// The return type
@@ -552,7 +555,7 @@ void parseLang_writeFunction_whenGive_t( bool isTemplated , std::string::iterato
 	}
 }
 
-void parse_lang_write_function( std::string &subVal , const std::string & toLang , std::ostream & o )
+void parse_lang_write_function( std::string &subVal , languageToConvertTo toLang , std::ostream & o )
 {
 	using namespace boost::algorithm;
 	using namespace std;
@@ -573,7 +576,7 @@ void parse_lang_write_function( std::string &subVal , const std::string & toLang
 	{
 		// The iterator to the first occurrence of " Gives "
 		auto givesIdx = boost::find_first( subVal , l_Gives_ ).begin( );
-		parseLang_writeFunction_whenGive_t( isTemplated , givesIdx , subVal , o , toLang , templateIdx );
+		parseLang_writeFunction_whenGive( isTemplated , givesIdx , subVal , o , toLang , templateIdx );
 	}
 	else
 	{
@@ -594,7 +597,27 @@ void parse_lang_write_function( std::string &subVal , const std::string & toLang
 	}
 }
 
-void parse_lang_parse_interface_text( std::string & vText , const std::string & toLang , std::ostream & o , const char * semicolon , bool &isCpp , bool& isCS , std::string_view cppPrefix , std::string_view csPrefix )
+void parse_lang_InterfaceText_AccessModifiers( std::string& subVal , std::ostream & o , languageToConvertTo toLang )
+{
+	if ( boost::starts_with( subVal , "Public " ) )
+	{
+		o << replacements.at( toLang ).at( "Public" ) << " ";
+		subVal.erase( subVal.begin( ) , subVal.begin( ) + 7 );
+	}
+	else if ( boost::starts_with( subVal , "Internal " ) )
+	{
+		o << replacements.at( toLang ).at( "Internal" ) << " ";
+		subVal.erase( subVal.begin( ) , subVal.begin( ) +  9 );
+	}
+	else if ( boost::starts_with( subVal , "Protected " ) )
+	{
+		o << replacements.at( toLang ).at( "Protected" ) << " ";
+		subVal.erase( subVal.begin( ) , subVal.begin( ) + 10 );
+	}
+	else o << replacements.at( toLang ).at( "Protected" ) << " ";
+}
+
+void parse_lang_parse_interface_text( std::string & vText , languageToConvertTo toLang , std::ostream & o , const char * semicolon , std::string_view cppPrefix , std::string_view csPrefix )
 {
 	using namespace std;
 	// We trim the string
@@ -608,48 +631,24 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 		// The splitting function
 		isNewLine ,
 		// The looping function
-		[ &o , &semicolon , &isCpp , &isCS , &toLang , &cppPrefix , &csPrefix ]( string&& subVal )
+		[ &o , &semicolon , &toLang , &cppPrefix , &csPrefix ]( string&& subVal )
 		{
 			// We trim the string
 			boost::trim( subVal );
 			if ( subVal == "" )return;
 			// We add an indent.
 			o << indent;
-			if ( boost::starts_with( subVal , "Public " ) )
-			{
-				o << replacements.at( toLang ).at( "Public" ) << " ";
-				subVal.erase( subVal.begin( ) , subVal.begin( ) + 8 );
-			}
-			else if ( boost::starts_with( subVal , "Internal " ) )
-			{
-				o << replacements.at( toLang ).at( "Internal" ) << " ";
-				subVal.erase( subVal.begin( ) , subVal.begin( ) + 11 );
-			}
-			else if ( boost::starts_with( subVal , "Protected " ) )
-			{
-				o << replacements.at( toLang ).at( "Protected" ) << " ";
-				subVal.erase( subVal.begin( ) , subVal.begin( ) + 11 );
-			}
-			else o << replacements.at( toLang ).at( "Protected" ) << " ";
+			parse_lang_InterfaceText_AccessModifiers( subVal , o , toLang );
 			// If the language is C++ then we insert the C++ prefix
-			if ( isCpp ) o << cppPrefix;
+			if ( toLang == languageToConvertTo::CPP ) o << cppPrefix;
 			// Else If the language is C# then we insert the C# prefix
-			else if ( isCS ) o << csPrefix;
+			else if ( toLang == languageToConvertTo::CS ) o << csPrefix;
 			// If the return type is given
 			if ( boost::contains( subVal , l_Gives_ ) )
 			{
 				// Get the return type idx
 				auto givesIdx = boost::find_first( subVal , l_Gives_ ).begin( );
-				// Then the get the return type
-				auto retVal = string( givesIdx + 7 , subVal.end( ) );
-				// Convert and write it
-				convertTextToLang( o , retVal , toLang , false , false );
-				// a space
-				o << ' ';
-				// Get the function signature
-				auto funcSig = string( subVal.substr( 0 , givesIdx - subVal.begin( ) ) );
-				// Convert and write it
-				convertTextToLang( o , funcSig , toLang , false , false );
+				parseLang_functionRetTypNotGeneric( givesIdx , subVal , o , toLang );
 			}
 			// Otherwise the return type is "void" and the function signature is the subVal
 			else
@@ -658,7 +657,7 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 				convertTextToLang( o , subVal , toLang , false , false );
 			}
 			// If the language is C++ then we make the function pure virtual.
-			if ( isCpp ) o << " = 0";
+			if ( toLang == languageToConvertTo::CPP ) o << " = 0";
 			// We need the semicolon
 			o << semicolon << endl;
 		}
@@ -666,15 +665,15 @@ void parse_lang_parse_interface_text( std::string & vText , const std::string & 
 }
 
 // Post Modifiable Tag Enclosed With Brace
-void parse_lang_PMTEWB( std::ostream & o , const tags & tagVal , const std::string & toLang , std::string &subVal , bool isCpp )
+void parse_lang_PMTEWB( std::ostream & o , const tags & tagVal , languageToConvertTo toLang , std::string &subVal )
 {
 	o << to_string( tagVal , toLang ) << '(';
 	convertTextToLang( o , subVal , toLang , false , false );
 	o << ")";
-	if ( tagVal == tags::_Lock_ && isCpp )o << ";";
+	if ( tagVal == tags::_Lock_ && toLang == languageToConvertTo::CPP )o << ";";
 }
 
-void parse_lang_write_event( std::string &subVal , const std::string & toLang , std::ostream & o )
+void parse_lang_write_event( std::string &subVal , languageToConvertTo toLang , std::ostream & o )
 {
 	using namespace std;
 
@@ -697,9 +696,9 @@ void parse_lang_write_event( std::string &subVal , const std::string & toLang , 
 }
 
 
-void parse_lang_CSI_replace_And( const std::string & toLang , std::string &inheritance , std::ostream & o )
+void parse_lang_CSI_replace_And( languageToConvertTo toLang , std::string &inheritance , std::ostream & o )
 {
-	if ( toLang == literal_cpp )
+	if ( toLang == languageToConvertTo::CPP )
 	{
 		// The default and mandatory inheritance access specifier is Public.
 		ReplaceAllSurroundedByNonAlnumChars( inheritance , l_And_ , ", Public " );
@@ -713,7 +712,7 @@ void parse_lang_CSI_replace_And( const std::string & toLang , std::string &inher
 	}
 }
 
-void parseLang_writeCSI_Template( std::string & subVal , const std::string & toLang , std::ostream & o , const tags & tagVal )
+void parseLang_writeCSI_Template( std::string & subVal , languageToConvertTo toLang , std::ostream & o , const tags & tagVal )
 {
 	using namespace std;
 
@@ -722,7 +721,7 @@ void parseLang_writeCSI_Template( std::string & subVal , const std::string & toL
 	// The template parameters
 	auto templateParameters = string( templateIdx + 10 , subVal.end( ) );
 	// If the language is C++
-	if ( toLang == literal_cpp )
+	if ( toLang == languageToConvertTo::CPP )
 		// We insert the appropriate starting template<...> parameter list in C++
 		o << "template<typename " << boost::replace_all_copy( templateParameters , "," , ", typename" ) << ">\n" << indent;
 	// Write the tag's string repr.
@@ -762,7 +761,7 @@ void parseLang_writeCSI_Template( std::string & subVal , const std::string & toL
 }
 
 // class structure namespace enum interface
-void parse_lang_write_CSNEI( std::string &subVal , const std::string & toLang , std::ostream & o , const tags & tagVal )
+void parse_lang_write_CSNEI( std::string &subVal , languageToConvertTo toLang , std::ostream & o , const tags & tagVal )
 {
 	using namespace std;
 
@@ -813,7 +812,7 @@ void ReplaceNewLines( std::string &subVal )
 
 void parse_lang( std::ostream& o , bool& isTagParsed ,
 				 std::string & text , const tags & tagVal ,
-				 const std::string & toLang )
+				 languageToConvertTo toLang )
 {
 	using namespace std;
 	auto
@@ -827,10 +826,6 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 		isSkip = isNative || isRoot || isComment /* ||extra stuff */ ,
 		// Is the tag a statement in a switch (Case||FTCase||Default||FTDefault)
 		isCase = false ,
-		// Is the language equal to C++, used to avoid repeated comparisons.
-		isCpp = toLang == literal_cpp ,
-		// Is the language equal to C#, used to avoid repeated comparisons.
-		isCs = toLang == literal_cs ,
 		// Is the tag one that has no post modifiers.
 		isANoPostModiferTag = false ,
 		// Does the tag encapsulate abstract functions.
@@ -882,13 +877,13 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 
 			// Property
 		case tags::_Property_:
-			if ( isCpp )throw qcParsingException( "Properties aren't supported in QC trans-compiled to C++ (17 With Boost)." , propertyNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Properties aren't supported in QC trans-compiled to C++ (17 With Boost)." , propertyNotSupported );
 			parse_lang_write_property( subVal , toLang , o );
 			break;
 
 			// Indexer
 		case tags::_Indexer_:
-			if ( isCpp )throw qcParsingException( "Indexers aren't supported in QC trans-compiled to C++ (17 With Boost)." , indexerNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Indexers aren't supported in QC trans-compiled to C++ (17 With Boost)." , indexerNotSupported );
 			parse_lang_write_indexer( subVal , toLang , o );
 			break;
 
@@ -897,7 +892,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			goto NoPostModifierTags;
 			// (n) Get, Set (n)
 		case tags::_Get_: case tags::_Set_:
-			if ( isCpp )throw qcParsingException( "Get & Set aren't supported in QC trans-compiled to C++ (17 With Boost)." , getSetNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Get & Set aren't supported in QC trans-compiled to C++ (17 With Boost)." , getSetNotSupported );
 			goto NoPostModifierTags;
 
 			// If, ElseIf (y)
@@ -929,7 +924,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 
 			// (n) Finally (n)
 		case tags::_Finally_:
-			if ( isCpp ) throw qcParsingException( "Finally blocks aren't supported in QC trans-compiled to C++ (17 With Boost)." , finallyNotSupported );
+			if ( toLang == languageToConvertTo::CPP ) throw qcParsingException( "Finally blocks aren't supported in QC trans-compiled to C++ (17 With Boost)." , finallyNotSupported );
 			// (n) Do (n)
 			// Unsafe, Unchecked, Checked, Get, Set, Else, Default, FallThroughDefault, Try, Finally, Do, ForEver, Add and Remove
 		case tags::_Do_:
@@ -970,7 +965,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 
 		// (y) ForEach (y)
 		case tags::_ForEach_:
-			if ( isCpp ) parse_lang_write_foreach_when_cpp( o , tagVal , toLang , isCpp , subVal );
+			if ( toLang == languageToConvertTo::CPP ) parse_lang_write_foreach_when_cpp( o , tagVal , toLang , subVal );
 			else goto PostModifiableTagEncolsedWithBrace;
 			break;
 
@@ -989,24 +984,24 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 
 			// (y) Using (y) when CS else Using
 		case tags::_Using_:
-			if ( isCpp ) parse_lang_write_using_when_cpp( isSkip , o , subVal , toLang , semicolon );
+			if ( toLang == languageToConvertTo::CPP ) parse_lang_write_using_when_cpp( isSkip , o , subVal , toLang , semicolon );
 			else goto PostModifiableTagEncolsedWithBrace;
 			break;
 
 			// Event
 		case tags::_Event_:
-			if ( isCpp )throw qcParsingException( "Events aren't supported in QC trans-compiled to C++ (17 With Boost)." , eventNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Events aren't supported in QC trans-compiled to C++ (17 With Boost)." , eventNotSupported );
 			parse_lang_write_event( subVal , toLang , o );
 			break;
 
 			// (n) Add and Remove (n)
 		case tags::_Add_:case tags::_Remove_:
-			if ( isCpp )throw qcParsingException( "Add & Remove aren't supported in QC trans-compiled to C++ (17 With Boost)." , addRemoveNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Add & Remove aren't supported in QC trans-compiled to C++ (17 With Boost)." , addRemoveNotSupported );
 			goto NoPostModifierTags;
 
 			// If, ElseIf, Switch, Catch, While, ForEach, Lock and (Using when CS)
 		default: PostModifiableTagEncolsedWithBrace:
-			parse_lang_PMTEWB( o , tagVal , toLang , subVal , isCpp );
+			parse_lang_PMTEWB( o , tagVal , toLang , subVal );
 			break;
 		}
 
@@ -1049,14 +1044,14 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 		if ( tagVal == tags::_CPP_ )
 		{
 			// If the language is C++ then we write the text
-			if ( isCpp )goto final_;
+			if ( toLang == languageToConvertTo::CPP )goto final_;
 			// Else we do not write the elements
 		}
 		// If the tag's direct text are CS only
 		if ( tagVal == tags::_CS_ )
 		{
 			// If the language is C# then we write the text
-			if ( isCs )goto final_;
+			if ( toLang == languageToConvertTo::CS )goto final_;
 			// Else we do not write the text
 		}
 		// If the tag is just native
@@ -1085,12 +1080,12 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 		auto _text = wasTagParsed ? "" : text.substr( idx );
 		auto& vText = wasTagParsed ? text : _text;
 		// We parse the interface text
-		parse_lang_parse_interface_text( vText , toLang , o , ";" , isCpp , isCs , "virtual " , "" );
+		parse_lang_parse_interface_text( vText , toLang , o , ";" , "virtual " , "" );
 	}
 	else if ( isAbstract )
 		// The conversions for abstract functions and interface functions are the same.
 	{
-		parse_lang_parse_interface_text( text , toLang , o , ";" , isCpp , isCs , "virtual " , "abstract " );
+		parse_lang_parse_interface_text( text , toLang , o , ";" , "virtual " , "abstract " );
 	}
 	else
 	{
@@ -1264,12 +1259,12 @@ void ReplaceAllSurroundedByNonAlnumChars( std::string& input , std::string searc
 	replace.pop_back( );
 }
 
-void convStr( std::string & val , const std::string & toLang , bool processNewLines , bool applyException )
+void convStr( std::string & val , languageToConvertTo toLang , bool processNewLines , bool applyException )
 {
 	using namespace boost::algorithm;
 	replaceAngleBrace( val );
 	// If the language is not C++
-	if ( toLang != literal_cpp )
+	if ( toLang != languageToConvertTo::CPP )
 	{
 		// Replace all "::" with "."
 		replace_all( val , lcolon_colon , ldot );
@@ -1325,7 +1320,7 @@ void replaceAngleBrace( std::string & val )
 	boost::algorithm::replace_all( val , "]]" , ">" );
 }
 
-void checkStr( const std::string_view & val , const std::string & toLang )
+void checkStr( const std::string_view & val , languageToConvertTo toLang )
 {
 	using namespace std::string_literals;
 	std::list<char> closeBraces;
@@ -1401,7 +1396,7 @@ void checkStr( const std::string_view & val , const std::string & toLang )
 	if ( errStr != "" ) throw qcParsingException( errStr , braceMismatch );
 }
 
-std::string WriteDoLoop( std::string & val , std::ostream & o , const std::string & toLang )
+std::string WriteDoLoop( std::string & val , std::ostream & o , languageToConvertTo toLang )
 {
 	using namespace boost::algorithm;
 
@@ -1426,7 +1421,7 @@ std::string WriteDoLoop( std::string & val , std::ostream & o , const std::strin
 	return val.substr( loopCondEndIdx );
 }
 
-void convertTextToLang( std::ostream& o , std::string & text , const std::string & toLang , bool doStartIndent , bool processNewLines , bool remCont )
+void convertTextToLang( std::ostream& o , std::string & text , languageToConvertTo toLang , bool doStartIndent , bool processNewLines , bool remCont )
 {
 	using namespace boost::algorithm;
 	replace_all( text , "|]" , ">" );
@@ -1469,10 +1464,10 @@ void convertTextToLang( std::ostream& o , std::string & text , const std::string
 			}
 			else
 			{
-				if ( toLang == literal_cs ) replace_all( val , R"(")" , R"("")" );
+				if ( toLang == languageToConvertTo::CS ) replace_all( val , R"(")" , R"("")" );
 				replace_all( val , "\\`" , "`" );
-				if ( toLang == literal_cs ) o << "@\"" << val << "\"";
-				else if ( toLang == literal_cpp ) o << "R\"(" << val << ")\"";
+				if ( toLang == languageToConvertTo::CS ) o << "@\"" << val << "\"";
+				else if ( toLang == languageToConvertTo::CPP ) o << "R\"(" << val << ")\"";
 				isStr = true;
 			}
 			idx++;
@@ -1492,6 +1487,8 @@ size_t getFirstNewline( const std::string_view & val , size_t off )
 		else return pos;
 	}
 }
+
+void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang , bool indent );
 
 int parseArgs( boost::program_options::variables_map vm )
 {
@@ -1517,20 +1514,15 @@ int parseArgs( boost::program_options::variables_map vm )
 		arg = curr;
 		arg /= filePath;
 	}
-	string toLang( ( !vm.count( "file" ) ) ? "qc" : vm[ "language" ].as<std::string>( ) );
-	bool indent = vm.count( "indent" );
 
-	if ( supportedLanguages.find( toLang ) == supportedLanguages.end( ) )
-	{
-		auto v = qcParsingException( "Language \"" + toLang + "\" is not presently supported" , unsupportedLanguage ).errCode;
-		return v;
-	}
-
-	cout << "Full parsing started" << endl;
-
-	++indentLevel;
 	try
 	{
+		languageToConvertTo toLang( fromString( vm[ "language" ].as<std::string>( ) ) );
+		bool indent = vm.count( "indent" );
+
+		cout << "Full parsing started" << endl;
+
+		++indentLevel;
 		if ( is_regular_file( arg ) ) parse_file( arg , toLang );
 		else if ( is_directory( arg ) ) traversePath( arg , toLang , indent );
 		else throw qcParsingException( "Path is neither a (regular) file not a directory" , notFileNorDir );
@@ -1546,7 +1538,7 @@ int parseArgs( boost::program_options::variables_map vm )
 	return 0;
 }
 
-void traversePath( boost::filesystem::path &arg , std::string &toLang , bool indent )
+void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang , bool indent )
 {
 	using namespace std;
 	using namespace std::string_literals;
@@ -1616,7 +1608,7 @@ void parse_file(
 	succeed = phrase_parse( iter , end , qc , space , ast );
 }
 
-void parse_file( boost::filesystem::path &filename , std::string &toLang )
+void parse_file( boost::filesystem::path &filename , languageToConvertTo toLang )
 {
 	auto ext = filename.extension( ).string( );
 	if ( validQCFileExtentions.find( ext ) == validQCFileExtentions.end( ) ) return;

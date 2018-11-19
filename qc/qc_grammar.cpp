@@ -4,13 +4,13 @@
 #include <boost/phoenix/function/adapt_function.hpp>
 
 std::string __GetEndString( tags tag )
-{ return std::string( to_string( tag , "QC" , true ) ); }
+{ return std::string( to_stringQCL( tag , true ) ); }
 BOOST_PHOENIX_ADAPT_FUNCTION( std::string , GetEndStringParser , __GetEndString , 1 );
 
 struct qc_parser::qc_node_printer : boost::static_visitor<>
 {
 	qc_node_printer(
-		std::ostream& o , const std::string& toLang ,
+		std::ostream& o , languageToConvertTo toLang ,
 		const tags& tagVal , bool& isTagParsed , bool& isDoLoop ) :
 		o { o } , toLang { toLang } , tagVal { tagVal } ,
 		isTagParsed { isTagParsed } , isDoLoop { isDoLoop } { }
@@ -26,20 +26,20 @@ struct qc_parser::qc_node_printer : boost::static_visitor<>
 	{ parse_lang( o , isTagParsed , text , tagVal , toLang ); }
 
 	std::ostream& o;
-	const std::string& toLang;
+	languageToConvertTo toLang;
 	const tags& tagVal;
 	bool& isTagParsed;
 	bool& isDoLoop;
 };
 
-void qc_parser::operator()( qc_data& qc , std::ostream& o , const std::string& toLang ) const
+void qc_parser::operator()( qc_data& qc , std::ostream& o , languageToConvertTo toLang ) const
 {
 	auto qce = qc_data_extra { std::move( qc ),false };
 	( *this )( qce , o , toLang );
 	qc = std::move( qce.qc );
 }
 
-void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , const std::string& toLang ) const
+void qc_parser::operator()( qc_data_extra& qc , std::ostream& o , languageToConvertTo toLang ) const
 {
 	const auto& tagVal = qc.qc.name;
 	bool doesDoLoopNeedParsing = false;

@@ -28,23 +28,22 @@ struct __indent
 {
 	_indent operator()( size_t indentLevel );
 };
+
 static __indent indent;
 std::ostream& operator<<( std::ostream& o , _indent&& v );
 std::ostream& operator<<( std::ostream& o , __indent );
 
-void parse_lang( std::ostream& o , bool& isTagParsed , std::string & text , const tags & tagVal , const std::string & toLang );
+void parse_lang( std::ostream& o , bool& isTagParsed , std::string & text , const tags & tagVal , languageToConvertTo toLang );
 void commonReplacement( std::string & val );
-void convStr( std::string & val , const std::string & toLang , bool processNewLines = true , bool applyException = false );
+void convStr( std::string & val , languageToConvertTo toLang , bool processNewLines = true , bool applyException = false );
 void replaceAngleBrace( std::string & val );
-void checkStr( const std::string_view & val , const std::string & toLang );
-std::string WriteDoLoop( std::string& val , std::ostream& o , const std::string & toLang );
-void convertTextToLang( std::ostream& o , std::string & text , const std::string& toLang , bool doIndent = true , bool processNewLines = true, bool remCont = true );
+void checkStr( const std::string_view & val , languageToConvertTo toLang );
+std::string WriteDoLoop( std::string& val , std::ostream& o , languageToConvertTo toLang );
+void convertTextToLang( std::ostream& o , std::string & text , languageToConvertTo toLang , bool doIndent = true , bool processNewLines = true, bool remCont = true );
 size_t getFirstNewline( const std::string_view& val , size_t off = 0 );
 int parseArgs( boost::program_options::variables_map vm );
 
-void traversePath( boost::filesystem::path &arg , std::string &toLang , bool indent );
-
-void parse_file( boost::filesystem::path &filename , std::string &toLang );
+void parse_file( boost::filesystem::path &filename , languageToConvertTo toLang );
 void parse_file( boost::filesystem::path & filename , std::string &storage , std::string::const_iterator &iter , std::string::const_iterator &end , bool &succeed , qc_grammar &qc , qc_data &ast );
 
 template<typename Iter>forceinline bool isStrQuote( size_t i , Iter iter )
@@ -58,6 +57,4 @@ public:
 	qcParsingException( const std::string& first , int errCode );
 };
 
-void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::string & subVal , const std::string & toLang , std::ostream & o , std::string &retVal , std::string &funcSig );
-
-void parseLang_writeFunction_whenGive_t( bool isTemplated , std::_String_iterator<std::_String_alloc<std::_String_base_types<char , std::allocator<char>>>::_Mydata_t> &givesIdx , std::string & subVal , std::ostream & o , const std::string & toLang , std::string::iterator &templateIdx );
+void parseLang_writeFunctionTemplate( std::string::iterator &templateIdx , std::string & subVal , languageToConvertTo toLang , std::ostream & o , std::string &retVal , std::string &funcSig );

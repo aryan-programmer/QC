@@ -35,9 +35,9 @@ BOOST_FUSION_ADAPT_STRUCT(
 ///////////////////////////////////////////////////////////////////////////
 struct qc_parser
 {
-	void operator()( qc_data& qc , std::ostream& o , const std::string& toLang ) const;
+	void operator()( qc_data& qc , std::ostream& o , languageToConvertTo toLang ) const;
 private:
-	void operator()( qc_data_extra& qc , std::ostream& o = std::cout , const std::string& toLang = "" ) const;
+	void operator()( qc_data_extra& qc , std::ostream& o , languageToConvertTo toLang ) const;
 	struct qc_node_printer;
 };
 
