@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<NDepend IsCProject="false" IsPhysical="false" AppName="qc" Platform="DotNet" FileWrittenByProductVersion="2018.2.0.89">
+<NDepend IsCProject="false" IsPhysical="false" AppName="QC" Platform="DotNet" FileWrittenByProductVersion="2018.2.0.89">
   <OutputDir KeepXmlFiles="False">E:\C++ Projects\Quick C\qc\CppDependOut</OutputDir>
   <Projects>
     <Name>E:\C++ Projects\Quick C\qc\qc.sln</Name>

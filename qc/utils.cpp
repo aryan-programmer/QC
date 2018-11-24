@@ -1498,7 +1498,7 @@ size_t getFirstNewline( const std::string_view & val , size_t off )
 	}
 }
 
-void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang , bool indent );
+void traversePath( boost::filesystem::path &arg, languageToConvertTo toLang );
 
 int parseArgs( boost::program_options::variables_map vm )
 {
@@ -1527,14 +1527,13 @@ int parseArgs( boost::program_options::variables_map vm )
 
 	try
 	{
-		languageToConvertTo toLang( fromString( vm[ "language" ].as<std::string>( ) ) );
-		bool indent = vm.count( "indent" );
-
 		cout << "Full parsing started" << endl;
+
+		languageToConvertTo toLang( fromString( vm[ "language" ].as<std::string>( ) ) );
 
 		++indentLevel;
 		if ( is_regular_file( arg ) ) parse_file( arg , toLang );
-		else if ( is_directory( arg ) ) traversePath( arg , toLang , indent );
+		else if ( is_directory( arg ) ) traversePath( arg, toLang );
 		else throw qcParsingException( "Path is neither a (regular) file not a directory" , notFileNorDir );
 		--indentLevel;
 	}
@@ -1548,7 +1547,7 @@ int parseArgs( boost::program_options::variables_map vm )
 	return 0;
 }
 
-void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang , bool indent )
+void traversePath( boost::filesystem::path &arg, languageToConvertTo toLang )
 {
 	using namespace std;
 	using namespace std::string_literals;
@@ -1567,7 +1566,7 @@ void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang , b
 		{
 			path narg = first->path( );
 			if ( is_regular_file( narg ) )parse_file( narg , toLang );
-			else if ( is_directory( narg ) )traversePath( narg , toLang , indent );
+			else if ( is_directory( narg ) )traversePath( narg, toLang );
 			else
 				throw qcParsingException( "Path is neither a (regular) file not a directory" , notFileNorDir );
 		}
@@ -1673,4 +1672,4 @@ void parse_file( boost::filesystem::path &filename , languageToConvertTo toLang 
 }
 
 inline qcParsingException::qcParsingException( const std::string& first , int errCode ) :errCode( errCode )
-{ std::cerr << "Error: " << first << std::endl << "STACKTRACE:" << std::endl << boost::stacktrace::stacktrace( ) << std::endl; }
+{ std::cerr << "Error: " << first << std::endl << "STACKTRACE: " << std::endl << boost::stacktrace::stacktrace( ) << std::endl; }
