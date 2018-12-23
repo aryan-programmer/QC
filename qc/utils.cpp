@@ -350,10 +350,10 @@ void parse_lang_write_property( std::string &subVal , languageToConvertTo toLang
 	convertTextToLang( o , retVal , toLang , false , false );
 	// a space
 	o << ' ';
-	// Get the function signature
-	auto funcSig = std::string( subVal.substr( 0 , ofIdx - subVal.begin( ) ) );
+	// Get the name
+	auto name = subVal.substr( 0 , ofIdx - subVal.begin( ) );
 	// Convert and write it
-	convertTextToLang( o , funcSig , toLang , false , false );
+	convertTextToLang( o , name , toLang , false , false );
 }
 
 void parse_lang_write_indexer( std::string &subVal , languageToConvertTo toLang , std::ostream & o )
@@ -362,12 +362,12 @@ void parse_lang_write_indexer( std::string &subVal , languageToConvertTo toLang 
 	convertTextToLang( strm , subVal , toLang , false , false , false );
 	subVal = strm.str( );
 	auto ofIdx = boost::find_first( subVal , l_Of_ ).begin( );
-	if ( ofIdx == subVal.end( ) )throw qcParsingException( "The name of the property must come before \"Of\" and the type must come after \"Of\"." , invalidPropertySyntax );
+	if ( ofIdx == subVal.end( ) )throw qcParsingException( "The indexer's parameter declaration must come before \"Of\" and the type must come after \"Of\"." , invalidIndexerSyntax );
 	// Then the get the return type
 	auto retVal = std::string( ofIdx + 4 , subVal.end( ) );
 	// Convert and write it
 	convertTextToLang( o , retVal , toLang , false , false );
-	// a space
+	// a space then "this"
 	o << " this";
 	// Get the function signature
 	auto funcSig = std::string( subVal.substr( 0 , ofIdx - subVal.begin( ) ) );
@@ -383,6 +383,7 @@ void parse_lang_write_for_loop( std::string &subVal , languageToConvertTo toLang
 	using ascii::alnum;
 	using ascii::space;
 	using ascii::char_;
+	using ascii::string;
 
 	// The stream for retrieval
 	std::stringstream strm;
@@ -399,17 +400,17 @@ void parse_lang_write_for_loop( std::string &subVal , languageToConvertTo toLang
 
 	// Whether to introduce a new variable
 	bool newVar = false;
-	// The vector of parsings. 
+	// The vector of parsings.
 	std::vector<std::string> vec;
 	if ( !phrase_parse(
 		// Start
 		subValStart ,
 		// end
 		subValEnd ,
-		// If the subVal starts with "Var " then a new variable must be introduced
+		// If the subVal starts with "Variable " then a new variable must be introduced
 		lexeme[ -( lit( lVariable_ )[ phx::ref( newVar ) = true ] ) >>
 		// The name of the variable
-		+alnum ] >> '=' >>
+		+( alnum | char_( '_' ) ) ] >> '=' >>
 		// The start of the for loop
 		lexeme[ +( char_ - l_To_ ) ] >> lTo >>
 		// The end of the for loop
@@ -464,8 +465,7 @@ void parse_lang_write_until( std::ostream & o , std::string &subVal , languageTo
 void parse_lang_when_noPostModifierTag( std::ostream & o , const tags & tagVal , languageToConvertTo toLang , bool isCase )
 {
 	using namespace std;
-	o << to_string( tagVal , toLang );
-	o << endl;
+	o << to_string( tagVal , toLang ) << endl;
 	if ( !isCase ) o << indent << '{' << endl;
 }
 
@@ -788,7 +788,7 @@ void parse_lang_write_CSNEI( std::string &subVal , languageToConvertTo toLang , 
 				throw qcParsingException( "Namespaces can't have inheritance" , inheritanceOnNamespace );
 			if ( tagVal == tags::_Enum_ )
 				throw qcParsingException( "Enumerations can't have inheritance" , inheritanceOnEnumeration );
-			// The iterator to the first occurance of " Inherits "
+			// The iterator to the first occurrence of " Inherits "
 			auto inheritsIdx = boost::find_first( subVal , l_Inherits_ ).begin( );
 			// The name of the Class/Structure/Interface which we convert and write.
 			auto name = subVal.substr( 0 , inheritsIdx - subVal.begin( ) );
@@ -871,23 +871,23 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			parse_lang_write_CSNEI( subVal , toLang , o , tagVal );
 			break;
 
-		// Case is disabled above
-		//case tags::_Abstract_:
-		//	isSkip = isANoPostModiferTag = true;
-		//	break;
+			// Case is disabled above
+			//case tags::_Abstract_:
+			//	isSkip = isANoPostModiferTag = true;
+			//	break;
 
-			// NativeCPP, NativeCS & Native
+				// NativeCPP, NativeCS & Native
 		case tags::_CPP_: case tags::_CS_: case tags::_Native_: break;
 
 			// Property
 		case tags::_Property_:
-			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Properties aren't supported in QC trans-compiled to C++ (17 With Boost)." , propertyNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Properties aren't supported in QC trans-compiled to C++(17 With Boost)." , propertyNotSupported );
 			parse_lang_write_property( subVal , toLang , o );
 			break;
 
 			// Indexer
 		case tags::_Indexer_:
-			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Indexers aren't supported in QC trans-compiled to C++ (17 With Boost)." , indexerNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Indexers aren't supported in QC trans-compiled to C++(17 With Boost)." , indexerNotSupported );
 			parse_lang_write_indexer( subVal , toLang , o );
 			break;
 
@@ -896,7 +896,7 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 			goto NoPostModifierTags;
 			// (n) Get, Set (n)
 		case tags::_Get_: case tags::_Set_:
-			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Get & Set aren't supported in QC trans-compiled to C++ (17 With Boost)." , getSetNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Get & Set aren't supported in QC trans-compiled to C++(17 With Boost)." , getSetNotSupported );
 			goto NoPostModifierTags;
 
 			// If, ElseIf (y)
@@ -994,13 +994,13 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 
 			// Event
 		case tags::_Event_:
-			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Events aren't supported in QC trans-compiled to C++ (17 With Boost)." , eventNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Events aren't supported in QC trans-compiled to C++(17 With Boost)." , eventNotSupported );
 			parse_lang_write_event( subVal , toLang , o );
 			break;
 
 			// (n) Add and Remove (n)
 		case tags::_Add_:case tags::_Remove_:
-			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Add & Remove aren't supported in QC trans-compiled to C++ (17 With Boost)." , addRemoveNotSupported );
+			if ( toLang == languageToConvertTo::CPP )throw qcParsingException( "Add & Remove aren't supported in QC trans-compiled to C++(17 With Boost)." , addRemoveNotSupported );
 			goto NoPostModifierTags;
 
 			// If, ElseIf, Switch, Catch, While, ForEach, Lock and (Using when CS)
@@ -1092,8 +1092,8 @@ void parse_lang( std::ostream& o , bool& isTagParsed ,
 		parse_lang_parse_interface_text( vText , toLang , o , ";" , "virtual " , "" );
 	}
 	else if ( isAbstract )
-		// The conversions for abstract functions and interface functions are the same.
 	{
+		// The conversions for abstract functions and interface functions are the same.
 		parse_lang_parse_interface_text( text , toLang , o , ";" , "virtual " , "abstract " );
 	}
 	else
@@ -1423,8 +1423,8 @@ std::string WriteDoLoop( std::string & val , std::ostream & o , languageToConver
 	auto loopCondEndIdx = getFirstNewline( val , loopCondIdx );
 	auto loopCond = val.substr( loopCondIdx + 6 , loopCondEndIdx - loopCondIdx - 6 );
 	o << " while( ";
-	if ( !isWhile )o << " ( !";
-	o << loopCond;
+	if ( !isWhile )o << " !( ";
+	convertTextToLang( o , loopCond , toLang , false , true );
 	if ( !isWhile )o << " )";
 	o << " );" << std::endl;
 	return val.substr( loopCondEndIdx );
@@ -1435,10 +1435,9 @@ void convertTextToLang( std::ostream& o , std::string & text , languageToConvert
 	using namespace boost::algorithm;
 	replace_all( text , "|]" , ">" );
 	replace_all( text , "[|" , "<" );
+
 	checkStr( text , toLang );
-
 	trim_left( text );
-
 	size_t idx = 0;
 	bool start = true;
 	bool isStr = false;
@@ -1498,9 +1497,9 @@ size_t getFirstNewline( const std::string_view & val , size_t off )
 	}
 }
 
-void traversePath( boost::filesystem::path &arg, languageToConvertTo toLang );
+void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang );
 
-int parseArgs( boost::program_options::variables_map vm )
+int parseArgs( boost::program_options::variables_map& vm )
 {
 	using namespace std;
 	using namespace std::string_literals;
@@ -1512,6 +1511,11 @@ int parseArgs( boost::program_options::variables_map vm )
 	{
 		cerr << "No input file given" << endl;
 		return noInpFileOrDir;
+	}
+	if ( !vm.count( "language" ) )
+	{
+		cerr << "No language specified." << endl;
+		return invalidCommandLineParameters;
 	}
 
 	path curr = workingDir( );
@@ -1533,7 +1537,7 @@ int parseArgs( boost::program_options::variables_map vm )
 
 		++indentLevel;
 		if ( is_regular_file( arg ) ) parse_file( arg , toLang );
-		else if ( is_directory( arg ) ) traversePath( arg, toLang );
+		else if ( is_directory( arg ) ) traversePath( arg , toLang );
 		else throw qcParsingException( "Path is neither a (regular) file not a directory" , notFileNorDir );
 		--indentLevel;
 	}
@@ -1547,7 +1551,7 @@ int parseArgs( boost::program_options::variables_map vm )
 	return 0;
 }
 
-void traversePath( boost::filesystem::path &arg, languageToConvertTo toLang )
+void traversePath( boost::filesystem::path &arg , languageToConvertTo toLang )
 {
 	using namespace std;
 	using namespace std::string_literals;
@@ -1562,21 +1566,20 @@ void traversePath( boost::filesystem::path &arg, languageToConvertTo toLang )
 	++indentLevel;
 	try
 	{
-		for ( directory_iterator first( arg ) , end; first != end; first++ )
+		for ( directory_iterator first( arg ) , end {}; first != end; first++ )
 		{
 			path narg = first->path( );
 			if ( is_regular_file( narg ) )parse_file( narg , toLang );
-			else if ( is_directory( narg ) )traversePath( narg, toLang );
-			else
-				throw qcParsingException( "Path is neither a (regular) file not a directory" , notFileNorDir );
+			else if ( is_directory( narg ) )traversePath( narg , toLang );
+			else throw qcParsingException( "Path is neither a (regular) file not a directory" , notFileNorDir );
 		}
-		cout << ::indent << truncname << " Dir. parsing succeeded" << endl;
 		--indentLevel;
+		cout << indent << truncname << " Dir. parsing succeeded" << endl;
 	}
 	catch ( qcParsingException& v )
 	{
 		--indentLevel;
-		cout << ::indent << truncname << " Dir. parsing failed" << endl;
+		cout << indent << truncname << " Dir. parsing failed" << endl;
 		throw v;
 	}
 }
@@ -1592,7 +1595,7 @@ void parse_file(
 {
 	using namespace std;
 
-	std::ifstream in( filename.string( ) , ios_base::in );
+	ifstream in( filename.string( ) , ios_base::in );
 
 	if ( !in )
 	{
@@ -1623,7 +1626,6 @@ void parse_file( boost::filesystem::path &filename , languageToConvertTo toLang 
 	if ( validQCFileExtentions.find( ext ) == validQCFileExtentions.end( ) ) return;
 
 	using namespace std;
-	using namespace std::string_literals;
 
 	bool succeeded;
 	string::const_iterator iter , end;
@@ -1658,10 +1660,11 @@ void parse_file( boost::filesystem::path &filename , languageToConvertTo toLang 
 			__end__.restore( );
 			cout << indent << truncname << " File parsing succeeded" << endl;
 		}
-		catch ( qcParsingException& )
+		catch ( qcParsingException& ex )
 		{
+			__end__.restore( );
 			cout << indent << truncname << " File parsing failed" << endl;
-			throw;
+			throw ex;
 		}
 	}
 	else

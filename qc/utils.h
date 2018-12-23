@@ -41,7 +41,7 @@ void checkStr( const std::string_view & val , languageToConvertTo toLang );
 std::string WriteDoLoop( std::string& val , std::ostream& o , languageToConvertTo toLang );
 void convertTextToLang( std::ostream& o , std::string & text , languageToConvertTo toLang , bool doIndent = true , bool processNewLines = true, bool remCont = true );
 size_t getFirstNewline( const std::string_view& val , size_t off = 0 );
-int parseArgs( boost::program_options::variables_map vm );
+int parseArgs( boost::program_options::variables_map& vm );
 
 void parse_file( boost::filesystem::path &filename , languageToConvertTo toLang );
 void parse_file( boost::filesystem::path & filename , std::string &storage , std::string::const_iterator &iter , std::string::const_iterator &end , bool &succeed , qc_grammar &qc , qc_data &ast );

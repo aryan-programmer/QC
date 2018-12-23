@@ -20,7 +20,7 @@ struct qc_data
 
 struct qc_data_extra
 {
-	qc_data qc;
+	qc_data& qc;
 	bool tagParsed = false;
 };
 

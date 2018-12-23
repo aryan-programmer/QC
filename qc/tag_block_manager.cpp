@@ -100,14 +100,7 @@ std::unordered_map<languageToConvertTo , tagToStrMap> constructsMap {
 tagToStrMap constructsMapQCL { DEFINE_QC_CONSTRUCTS };
 
 std::string_view to_string( const tags & tag , languageToConvertTo lang , bool end )
-{
-	switch ( tag )
-	{
-		DEFINE_OSTR_SWITCH_CASES
-	default:
-		return "Unknown";
-	}
-}
+{return end ? constructsMap.at(lang).at(tag).second : constructsMap.at(lang).at(tag).first;}
 
 std::string_view to_stringQCL( const tags & tag , bool end )
 { return end ? constructsMapQCL.at( tag ).second : constructsMapQCL.at( tag ).first; }
