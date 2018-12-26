@@ -1,5 +1,5 @@
 <NotepadPlus>
-    <UserLang name="QC" ext="qc, hqc, sqc" udlVersion="2.1">
+    <UserLang name="QC" ext="qc hqc sqc" udlVersion="2.1">
         <Settings>
             <Global caseIgnored="no" allowFoldOfComments="yes" foldCompact="no" forcePureLC="0" decimalSeparator="0" />
             <Prefix Keywords1="no" Keywords2="yes" Keywords3="no" Keywords4="no" Keywords5="no" Keywords6="no" Keywords7="no" Keywords8="no" />
@@ -24,9 +24,9 @@
             <Keywords name="Folders in comment, open">Region</Keywords>
             <Keywords name="Folders in comment, middle"></Keywords>
             <Keywords name="Folders in comment, close">EndRegion</Keywords>
-            <Keywords name="Keywords1">Gives To Step Of Variable Template Inherits Abstract AlsoGive Await My Base Base Break CPPInclude CSLine CPPLine Constant Templated Finalize Give Class CPPConst Continue Default Delegate Event Explicit Extern False Goto Implicit In Is New DynNew NullPtrType NullPtr Null Operator Override Parameters Private Protected Public ReadOnly Sealed StackAlloc Static Structure Me Throw True Virtual Nothing Volatile Auto CSVar Using Global Dynamic Wide REM TypeOf Get Set CSPublic Int16 Int32 Int64 UInt16 UInt32 UInt64 Short Int Long UShort UInt ULong Char WChar Bool Byte SByte Object HashCode Float Single Double String WString StringRef WStringRef GenOf Gen IterGenOf IterGen Ref CPPRef Out CPPOut PriMutex Namespace</Keywords>
+            <Keywords name="Keywords1">Gives To Step Of Variable Template Inherits Abstract AlsoGive Await My Base Base Break CPPInclude CSLine CPPLine Constant Templated Finalize Give Class CPPConst Continue Default Delegate Event Explicit Extern False Goto Implicit In Is New DynNew NullPtrType NullPtr Null Operator Override Parameters Private Protected Public ReadOnly Sealed StackAlloc Static Structure Me Throw True Virtual Nothing Volatile Auto CSVar Using Global Dynamic Wide REM TypeOf Get Set CSPublic Int16 Int32 Int64 UInt16 UInt32 UInt64 Short Int Long UShort UInt ULong Char WChar Bool Byte SByte Object HashCode Float Single Double String WString StringRef WStringRef GenOf Gen IterGenOf IterGen Ref CPPRef Out CPPOut PriMutex Namespace Internal And</Keywords>
             <Keywords name="Keywords2">@ m_</Keywords>
-            <Keywords name="Keywords3">System Collections Generic</Keywords>
+            <Keywords name="Keywords3">System</Keywords>
             <Keywords name="Keywords4"></Keywords>
             <Keywords name="Keywords5"></Keywords>
             <Keywords name="Keywords6"></Keywords>
